@@ -124,7 +124,7 @@ class TelaLogin extends StatelessWidget {
                       elevation: 0,
                     ),
                     child: const Text(
-                      'Cú de curioso',
+                      'Entrar desenvolvimento',
                       style: TextStyle(
                         fontWeight: FontWeight.bold,
                         fontSize: 16,

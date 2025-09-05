@@ -1,3 +1,4 @@
+import 'package:dinneer/service/usuario/UsuarioService.dart';
 import 'package:flutter/material.dart';
 import '../screens/tela_detalhes_jantar.dart';
 
@@ -7,7 +8,11 @@ class CardRefeicao extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
-      onTap: () {
+      onTap: () async {
+
+        final usuarios = UsuarioService.getUsuarios();
+        print(usuarios);
+
         Navigator.push(
           context,
           MaterialPageRoute(builder: (context) => const TelaDetalhesJantar()),
