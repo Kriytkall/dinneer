@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import '../widgets/barra_de_navegacao.dart';
 import 'tela_home.dart';
-import 'tela_perfil.dart'; // Importa a nova tela de perfil
+import 'tela_perfil.dart';
+import 'tela_reservas.dart'; // Importando a nova tela
 
 class TelaPrincipal extends StatefulWidget {
   const TelaPrincipal({super.key});
@@ -16,9 +17,15 @@ class _TelaPrincipalState extends State<TelaPrincipal> {
   final List<Widget> _paginas = [
     const TelaHome(),
     const Center(child: Text('Página Chat', style: TextStyle(fontSize: 24))),
-    const Center(child: Text('Página Pedidos', style: TextStyle(fontSize: 24))),
-    const TelaPerfil(), // Adiciona a TelaPerfil à lista de páginas
+    const TelaReservas(), // Tela de Reservas adicionada aqui
+    const TelaPerfil(),
   ];
+
+  void _onItemTapped(int index) {
+    setState(() {
+      _paginaAtual = index;
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -26,11 +33,7 @@ class _TelaPrincipalState extends State<TelaPrincipal> {
       body: _paginas[_paginaAtual],
       bottomNavigationBar: BarraNavegacaoCustomizada(
         index: _paginaAtual,
-        onTap: (index) {
-          setState(() {
-            _paginaAtual = index;
-          });
-        },
+        onTap: _onItemTapped,
       ),
     );
   }
