@@ -1,10 +1,86 @@
+// lib/screens/tela_login.dart
+
+import 'package:dinneer/service/usuario/UsuarioService.dart';
 import 'package:flutter/material.dart';
 import '../widgets/campo_de_texto.dart';
 import 'tela_cadastro.dart';
 import '../screens/tela_principal.dart';
 
-class TelaLogin extends StatelessWidget {
+class TelaLogin extends StatefulWidget {
   const TelaLogin({super.key});
+
+  @override
+  State<TelaLogin> createState() => _TelaLoginState();
+}
+
+class _TelaLoginState extends State<TelaLogin> {
+  final _emailController = TextEditingController();
+  final _senhaController = TextEditingController();
+
+  // Variável para controlar o estado de carregamento do botão
+  bool _estaCarregando = false;
+
+  void _fazerLogin() async {
+    // Evita que o utilizador clique várias vezes no botão
+    if (_estaCarregando) return;
+
+    final email = _emailController.text;
+    final senha = _senhaController.text;
+
+    // Ativa o indicador de carregamento
+    setState(() {
+      _estaCarregando = true;
+    });
+
+    try {
+      var resposta = await UsuarioService.login(email, senha);
+      
+      // Verificamos se a resposta contém os dados do utilizador, indicando sucesso.
+      if (resposta['dados'] != null) {
+        
+        debugPrint('Login bem-sucedido! Bem-vindo, ${resposta['dados']['nome']}');
+
+        // Navega para o ecrã principal e remove o ecrã de login do histórico
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => const TelaPrincipal()),
+        );
+
+      } else {
+        // Se não houver dados, o login falhou (ex: senha errada)
+        // Mostramos a mensagem de erro que veio do servidor PHP
+        _mostrarMensagemErro(resposta['Mensagem'] ?? 'Email ou senha inválidos.');
+      }
+
+    } catch (e) {
+      debugPrint('Ocorreu um erro ao tentar fazer login: $e');
+      _mostrarMensagemErro('Não foi possível ligar ao servidor. Tente novamente.');
+    } finally {
+      // Desativa o indicador de carregamento, mesmo que ocorra um erro
+      if (mounted) {
+        setState(() {
+          _estaCarregando = false;
+        });
+      }
+    }
+  }
+
+  // Função auxiliar para mostrar uma notificação de erro
+  void _mostrarMensagemErro(String mensagem) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(mensagem),
+        backgroundColor: Colors.redAccent,
+      ),
+    );
+  }
+
+  @override
+  void dispose() {
+    _emailController.dispose();
+    _senhaController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -48,9 +124,16 @@ class TelaLogin extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: 40),
-                const CampoDeTextoCustomizado(dica: 'Email'),
+                CampoDeTextoCustomizado(
+                  controller: _emailController,
+                  dica: 'Email',
+                ),
                 const SizedBox(height: 16),
-                const CampoDeTextoCustomizado(dica: 'Senha', textoObscuro: true),
+                CampoDeTextoCustomizado(
+                  controller: _senhaController,
+                  dica: 'Senha',
+                  textoObscuro: true,
+                ),
                 const SizedBox(height: 24),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
@@ -78,13 +161,11 @@ class TelaLogin extends StatelessWidget {
                   ],
                 ),
                 const SizedBox(height: 30),
-
                 SizedBox(
                   width: double.infinity,
                   child: ElevatedButton(
-                    onPressed: () {
-                      print('Botão de login pressionado');
-                    },
+                    // Desativa o botão durante o carregamento
+                    onPressed: _estaCarregando ? null : _fazerLogin,
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.grey[300],
                       foregroundColor: Colors.black,
@@ -94,20 +175,30 @@ class TelaLogin extends StatelessWidget {
                       ),
                       elevation: 0,
                     ),
-                    child: const Text(
-                      'LOGIN',
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 16,
-                      ),
-                    ),
+                    // Mostra um indicador de progresso ou o texto do botão
+                    child: _estaCarregando
+                        ? const SizedBox(
+                            width: 24,
+                            height: 24,
+                            child: CircularProgressIndicator(
+                              color: Colors.black,
+                              strokeWidth: 3,
+                            ),
+                          )
+                        : const Text(
+                            'LOGIN',
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 16,
+                            ),
+                          ),
                   ),
                 ),
                 const SizedBox(height: 20),
                 SizedBox(
                   width: double.infinity,
                   child: ElevatedButton(
-                    onPressed: () {    
+                    onPressed: () {
                       Navigator.push(
                         context,
                         MaterialPageRoute(

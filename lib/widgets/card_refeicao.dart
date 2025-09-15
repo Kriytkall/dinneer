@@ -9,10 +9,10 @@ class CardRefeicao extends StatelessWidget {
   Widget build(BuildContext context) {
     return GestureDetector(
       onTap: () async {
-
-        final usuarios = UsuarioService.getUsuarios();
-        print(usuarios);
-
+        print('roda1');
+        final usuarios = await UsuarioService.getUsuarios();
+        print(usuarios["dados"]["id_usuario"]);
+        print('roda2');
         Navigator.push(
           context,
           MaterialPageRoute(builder: (context) => const TelaDetalhesJantar()),

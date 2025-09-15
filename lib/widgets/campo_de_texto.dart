@@ -1,11 +1,16 @@
+// lib/widgets/campo_de_texto.dart
+
 import 'package:flutter/material.dart';
 
 class CampoDeTextoCustomizado extends StatelessWidget {
+  // Adicionamos o controller como um parâmetro obrigatório.
+  final TextEditingController controller;
   final String dica;
   final bool textoObscuro;
 
   const CampoDeTextoCustomizado({
     super.key,
+    required this.controller, // Incluímos o controller no construtor.
     required this.dica,
     this.textoObscuro = false,
   });
@@ -13,6 +18,7 @@ class CampoDeTextoCustomizado extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return TextField(
+      controller: controller, // Ligamos o controller ao TextField.
       obscureText: textoObscuro,
       decoration: InputDecoration(
         hintText: dica,
