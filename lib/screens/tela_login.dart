@@ -17,17 +17,14 @@ class _TelaLoginState extends State<TelaLogin> {
   final _emailController = TextEditingController();
   final _senhaController = TextEditingController();
 
-  // Variável para controlar o estado de carregamento do botão
   bool _estaCarregando = false;
 
   void _fazerLogin() async {
-    // Evita que o utilizador clique várias vezes no botão
     if (_estaCarregando) return;
 
     final email = _emailController.text;
     final senha = _senhaController.text;
 
-    // Ativa o indicador de carregamento
     setState(() {
       _estaCarregando = true;
     });
@@ -35,20 +32,16 @@ class _TelaLoginState extends State<TelaLogin> {
     try {
       var resposta = await UsuarioService.login(email, senha);
       
-      // Verificamos se a resposta contém os dados do utilizador, indicando sucesso.
       if (resposta['dados'] != null) {
         
         debugPrint('Login bem-sucedido! Bem-vindo, ${resposta['dados']['nome']}');
 
-        // Navega para o ecrã principal e remove o ecrã de login do histórico
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(builder: (context) => const TelaPrincipal()),
         );
 
       } else {
-        // Se não houver dados, o login falhou (ex: senha errada)
-        // Mostramos a mensagem de erro que veio do servidor PHP
         _mostrarMensagemErro(resposta['Mensagem'] ?? 'Email ou senha inválidos.');
       }
 
@@ -56,7 +49,6 @@ class _TelaLoginState extends State<TelaLogin> {
       debugPrint('Ocorreu um erro ao tentar fazer login: $e');
       _mostrarMensagemErro('Não foi possível ligar ao servidor. Tente novamente.');
     } finally {
-      // Desativa o indicador de carregamento, mesmo que ocorra um erro
       if (mounted) {
         setState(() {
           _estaCarregando = false;
@@ -65,7 +57,6 @@ class _TelaLoginState extends State<TelaLogin> {
     }
   }
 
-  // Função auxiliar para mostrar uma notificação de erro
   void _mostrarMensagemErro(String mensagem) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
@@ -164,7 +155,7 @@ class _TelaLoginState extends State<TelaLogin> {
                 SizedBox(
                   width: double.infinity,
                   child: ElevatedButton(
-                    // Desativa o botão durante o carregamento
+
                     onPressed: _estaCarregando ? null : _fazerLogin,
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.grey[300],
@@ -175,7 +166,7 @@ class _TelaLoginState extends State<TelaLogin> {
                       ),
                       elevation: 0,
                     ),
-                    // Mostra um indicador de progresso ou o texto do botão
+
                     child: _estaCarregando
                         ? const SizedBox(
                             width: 24,

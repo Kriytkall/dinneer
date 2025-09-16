@@ -1,18 +1,28 @@
 import 'package:flutter/material.dart';
-import '../screens/tela_login.dart';
+import 'package:intl/date_symbol_data_local.dart';
+import 'screens/tela_login.dart';
 
-void main() {
-  runApp(const MeuApp());
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  
+  await initializeDateFormatting('pt_BR', null);
+  
+  runApp(const MyApp());
 }
 
-class MeuApp extends StatelessWidget {
-  const MeuApp({super.key});
+class MyApp extends StatelessWidget {
+  const MyApp({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return const MaterialApp(
+    return MaterialApp(
+      title: 'Dinneer',
+      theme: ThemeData(
+        primarySwatch: Colors.grey,
+        visualDensity: VisualDensity.adaptivePlatformDensity,
+      ),
+      home: const TelaLogin(),
       debugShowCheckedModeBanner: false,
-      home: TelaLogin(),
     );
   }
 }

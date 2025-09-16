@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import '../service/refeicao/Refeicao.dart';
+import '../service/refeicao/RefeicaoService.dart';
 import '../widgets/card_refeicao.dart';
 
 class TelaReservas extends StatefulWidget {
@@ -10,6 +12,27 @@ class TelaReservas extends StatefulWidget {
 
 class _TelaReservasState extends State<TelaReservas> {
   int _filtroSelecionado = 1;
+  late Future<List<Refeicao>> _reservasFuture;
+
+  @override
+  void initState() {
+    super.initState();
+    _reservasFuture = _carregarReservas();
+  }
+
+  Future<List<Refeicao>> _carregarReservas() async {
+    try {
+      final resposta = await RefeicaoService.getRefeicoes();
+      if (resposta['dados'] != null) {
+        final dados = List<dynamic>.from(resposta['dados']);
+        return dados.map((item) => Refeicao.fromMap(item)).toList();
+      }
+      return [];
+    } catch (e) {
+      debugPrint("Erro ao carregar reservas: $e");
+      return [];
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -74,22 +97,37 @@ class _TelaReservasState extends State<TelaReservas> {
           ),
         ),
         Expanded(
-          child: ListView.builder(
-            padding: const EdgeInsets.symmetric(horizontal: 16.0),
-            itemCount: 3,
-            itemBuilder: (context, index) {
-              return Padding(
-                padding: const EdgeInsets.only(bottom: 6.0),
-                child: Column(
-                  children: [
-                    const CardRefeicao(),
-                    if (_filtroSelecionado == 1)
-                      Transform.translate(
-                        offset: const Offset(0, -10),
-                        child: _buildStatusConfirmadoBar(),
-                      ),
-                  ],
-                ),
+          // Usamos o FutureBuilder para carregar a lista dinamicamente
+          child: FutureBuilder<List<Refeicao>>(
+            future: _reservasFuture,
+            builder: (context, snapshot) {
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return const Center(child: CircularProgressIndicator(color: Colors.black));
+              }
+              if (snapshot.hasError || !snapshot.hasData || snapshot.data!.isEmpty) {
+                return const Center(child: Text('Nenhuma reserva encontrada.'));
+              }
+
+              final reservas = snapshot.data!;
+              return ListView.builder(
+                padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                itemCount: reservas.length,
+                itemBuilder: (context, index) {
+                  final reserva = reservas[index];
+                  return Padding(
+                    padding: const EdgeInsets.only(bottom: 6.0),
+                    child: Column(
+                      children: [
+                        CardRefeicao(refeicao: reserva),
+                        if (_filtroSelecionado == 1)
+                          Transform.translate(
+                            offset: const Offset(0, -10),
+                            child: _buildStatusConfirmadoBar(),
+                          ),
+                      ],
+                    ),
+                  );
+                },
               );
             },
           ),

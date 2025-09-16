@@ -1,27 +1,90 @@
 import 'package:flutter/material.dart';
+import '../service/refeicao/Refeicao.dart'; // Importa o modelo
+import '../service/refeicao/RefeicaoService.dart';
 import '../widgets/card_refeicao.dart';
 
-class TelaHome extends StatelessWidget {
+class TelaHome extends StatefulWidget {
   const TelaHome({super.key});
 
   @override
+  State<TelaHome> createState() => _TelaHomeState();
+}
+
+class _TelaHomeState extends State<TelaHome> {
+  late Future<List<Refeicao>> _refeicoesFuture;
+
+  @override
+  void initState() {
+    super.initState();
+    _refeicoesFuture = _carregarRefeicoes();
+  }
+  Future<List<Refeicao>> _carregarRefeicoes() async {
+    try {
+      final resposta = await RefeicaoService.getRefeicoes();
+      if (resposta['dados'] != null) {
+        // Converte cada item do JSON para um objeto Refeicao
+        final dados = List<dynamic>.from(resposta['dados']);
+        return dados.map((item) => Refeicao.fromMap(item)).toList();
+      } else {
+        return [];
+      }
+    } catch (e) {
+      debugPrint("Erro ao carregar refeições: $e");
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Erro ao carregar jantares."), backgroundColor: Colors.red),
+        );
+      }
+      return [];
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
-    // Este widget retorna apenas o conteúdo do corpo da tela (o corpo do Scaffold)
     return Container(
       color: Colors.white,
-      child: ListView(
-        padding: const EdgeInsets.symmetric(horizontal: 16.0),
+      child: Column(
         children: [
-          const SizedBox(height: 16),
-          _buildSearchBar(),
-          const SizedBox(height: 16),
-          _buildFilterButtons(),
-          const SizedBox(height: 24),
-          // Para dados dinâmicos, o ideal seria usar um ListView.builder
-          const CardRefeicao(),
-          const CardRefeicao(),
-          const CardRefeicao(),
-          const CardRefeicao(),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16.0, 16.0, 16.0, 0),
+            child: Column(
+              children: [
+                _buildSearchBar(),
+                const SizedBox(height: 16),
+                _buildFilterButtons(),
+                const SizedBox(height: 12),
+              ],
+            ),
+          ),
+          Expanded(
+            // O FutureBuilder agora trabalha com a nossa classe Refeicao
+            child: FutureBuilder<List<Refeicao>>(
+              future: _refeicoesFuture,
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const Center(child: CircularProgressIndicator(color: Colors.black));
+                } 
+                else if (snapshot.hasError) {
+                  return Center(child: Text("Erro: ${snapshot.error}"));
+                } 
+                else if (!snapshot.hasData || snapshot.data!.isEmpty) {
+                  return const Center(child: Text("Nenhum jantar disponível no momento."));
+                } 
+                else {
+                  final refeicoes = snapshot.data!;
+                  return ListView.builder(
+                    padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                    itemCount: refeicoes.length,
+                    itemBuilder: (context, index) {
+                      final refeicao = refeicoes[index];
+                      // CORREÇÃO: Passamos o objeto refeicao para o card!
+                      return CardRefeicao(refeicao: refeicao); 
+                    },
+                  );
+                }
+              },
+            ),
+          ),
         ],
       ),
     );
@@ -68,3 +131,4 @@ class TelaHome extends StatelessWidget {
     );
   }
 }
+

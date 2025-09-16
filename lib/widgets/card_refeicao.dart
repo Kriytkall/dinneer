@@ -1,18 +1,16 @@
-import 'package:dinneer/service/usuario/UsuarioService.dart';
+import 'package:dinneer/service/refeicao/Refeicao.dart';
 import 'package:flutter/material.dart';
 import '../screens/tela_detalhes_jantar.dart';
 
 class CardRefeicao extends StatelessWidget {
-  const CardRefeicao({super.key});
+  final Refeicao refeicao;
+
+  const CardRefeicao({super.key, required this.refeicao});
 
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
-      onTap: () async {
-        print('roda1');
-        final usuarios = await UsuarioService.getUsuarios();
-        print(usuarios["dados"]["id_usuario"]);
-        print('roda2');
+      onTap: () {
         Navigator.push(
           context,
           MaterialPageRoute(builder: (context) => const TelaDetalhesJantar()),
@@ -30,7 +28,6 @@ class CardRefeicao extends StatelessWidget {
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Placeholder da Imagem
               Container(
                 width: 110,
                 height: 130,
@@ -38,9 +35,10 @@ class CardRefeicao extends StatelessWidget {
                   color: Colors.grey[300],
                   borderRadius: BorderRadius.circular(16.0),
                 ),
+                child: const Icon(Icons.dinner_dining_outlined,
+                    color: Colors.white, size: 50),
               ),
               const SizedBox(width: 16),
-              // Coluna de Detalhes
               Expanded(
                 child: SizedBox(
                   height: 130,
@@ -48,24 +46,30 @@ class CardRefeicao extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     mainAxisAlignment: MainAxisAlignment.spaceAround,
                     children: [
-                      const Text(
-                        'Jantar Italiano Gourmet',
-                        style: TextStyle(
+                      Text(
+                        refeicao.nmCardapio,
+                        style: const TextStyle(
                           fontWeight: FontWeight.bold,
                           fontSize: 16,
                         ),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
                       ),
+
                       _buildInfoRow(
-                          Icons.calendar_today_rounded, '12/09 às 19h'),
-                      const Text(
-                        'R\$ 50,00 por pessoa',
-                        style: TextStyle(
+                          Icons.calendar_today_rounded, refeicao.dataFormatada),
+
+                      Text(
+                        '${refeicao.precoFormatado} por pessoa',
+                        style: const TextStyle(
                           color: Colors.black87,
                           fontWeight: FontWeight.bold,
                         ),
                       ),
-                      _buildUserInfo(),
-                      _buildInfoRow(Icons.people_alt_rounded, '0/4 vagas'),
+                      _buildUserInfo(refeicao.nmUsuarioAnfitriao),
+
+                      _buildInfoRow(Icons.people_alt_rounded,
+                          '?/${refeicao.nuMaxConvidados} vagas'),
                     ],
                   ),
                 ),
@@ -90,7 +94,7 @@ class CardRefeicao extends StatelessWidget {
     );
   }
 
-  Widget _buildUserInfo() {
+  Widget _buildUserInfo(String nomeAnfitriao) {
     return Row(
       children: [
         CircleAvatar(
@@ -106,7 +110,7 @@ class CardRefeicao extends StatelessWidget {
               style: TextStyle(fontSize: 11, color: Colors.grey[600]),
             ),
             Text(
-              'Por Nome de usuário',
+              'Por $nomeAnfitriao',
               style: TextStyle(
                   fontSize: 11,
                   color: Colors.grey[800],

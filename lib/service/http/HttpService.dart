@@ -1,9 +1,9 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
-import 'package:flutter/foundation.dart'; // Import para debugPrint
+import 'package:flutter/foundation.dart';
 
 class HttpService {
-  // CORREÇÃO FINAL: A URL agora aponta para a sua pasta 'pdm_php'.
+
   String baseUrl = "http://192.168.1.201/pdm_php/api/v1/";
 
   HttpService();
