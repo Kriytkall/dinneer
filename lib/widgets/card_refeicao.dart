@@ -1,9 +1,9 @@
-import 'package:dinneer/service/refeicao/Refeicao.dart';
+import 'package:dinneer/service/refeicao/Cardapio.dart';
 import 'package:flutter/material.dart';
 import '../screens/tela_detalhes_jantar.dart';
 
 class CardRefeicao extends StatelessWidget {
-  final Refeicao refeicao;
+  final Cardapio refeicao;
 
   const CardRefeicao({super.key, required this.refeicao});
 

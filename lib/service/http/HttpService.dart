@@ -4,12 +4,12 @@ import 'package:flutter/foundation.dart';
 
 class HttpService {
 
-  String baseUrl = "http://192.168.1.201/pdm_php/api/v1/";
+  String baseUrl = "http://10.0.2.2/pdm/api/v1/";
 
   HttpService();
 
   Future<dynamic> post(String endpoint, String operacao, {Map<String, dynamic>? body}) async {
-    final url = Uri.parse("$baseUrl$endpoint?oper=$operacao");
+    final url = Uri.parse("$baseUrl$endpoint?operacao=$operacao");
 
     debugPrint("--------------------");
     debugPrint("POST Request URL: $url");
@@ -43,7 +43,7 @@ class HttpService {
   }
 
   Future<dynamic> get(String endpoint, String operacao) async {
-    final url = Uri.parse("$baseUrl$endpoint?oper=$operacao");
+    final url = Uri.parse("$baseUrl$endpoint?operacao=$operacao");
 
     try {
       final response = await http.get(url);

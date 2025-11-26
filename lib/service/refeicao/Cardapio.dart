@@ -1,6 +1,6 @@
 import 'package:intl/intl.dart';
 
-class Refeicao {
+class Cardapio {
   final int idUsuario;
   final String nmUsuarioAnfitriao;
   final String nmCardapio;
@@ -12,7 +12,7 @@ class Refeicao {
   final String nuCep;
   final String nuCasa;
 
-  Refeicao({
+  Cardapio({
     required this.idUsuario,
     required this.nmUsuarioAnfitriao,
     required this.nmCardapio,
@@ -25,7 +25,7 @@ class Refeicao {
     required this.nuCasa,
   });
 
-  factory Refeicao.fromMap(Map<String, dynamic> map) {
+  factory Cardapio.fromMap(Map<String, dynamic> map) {
     int _toInt(dynamic value) {
       if (value is int) return value;
       return int.tryParse(value.toString()) ?? 0;
@@ -36,7 +36,7 @@ class Refeicao {
       return double.tryParse(value.toString()) ?? 0.0;
     }
 
-    return Refeicao(
+    return Cardapio(
       idUsuario: _toInt(map['id_usuario']),
       nmUsuarioAnfitriao: map['nm_usuario_anfitriao'].toString(),
       nmCardapio: map['nm_cardapio'].toString(),

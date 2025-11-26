@@ -1,6 +1,6 @@
+import 'package:dinneer/service/refeicao/cardapioService.dart';
 import 'package:flutter/material.dart';
-import '../service/refeicao/Refeicao.dart'; // Importa o modelo
-import '../service/refeicao/RefeicaoService.dart';
+import '../service/refeicao/Cardapio.dart';
 import '../widgets/card_refeicao.dart';
 
 class TelaHome extends StatefulWidget {
@@ -11,20 +11,19 @@ class TelaHome extends StatefulWidget {
 }
 
 class _TelaHomeState extends State<TelaHome> {
-  late Future<List<Refeicao>> _refeicoesFuture;
+  late Future<List<Cardapio>> _refeicoesFuture;
 
   @override
   void initState() {
     super.initState();
     _refeicoesFuture = _carregarRefeicoes();
   }
-  Future<List<Refeicao>> _carregarRefeicoes() async {
+  Future<List<Cardapio>> _carregarRefeicoes() async {
     try {
-      final resposta = await RefeicaoService.getRefeicoes();
+      final resposta = await CardapioService.getCardapiosDisponiveis();
       if (resposta['dados'] != null) {
-        // Converte cada item do JSON para um objeto Refeicao
         final dados = List<dynamic>.from(resposta['dados']);
-        return dados.map((item) => Refeicao.fromMap(item)).toList();
+        return dados.map((item) => Cardapio.fromMap(item)).toList();
       } else {
         return [];
       }
@@ -57,8 +56,7 @@ class _TelaHomeState extends State<TelaHome> {
             ),
           ),
           Expanded(
-            // O FutureBuilder agora trabalha com a nossa classe Refeicao
-            child: FutureBuilder<List<Refeicao>>(
+            child: FutureBuilder<List<Cardapio>>(
               future: _refeicoesFuture,
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting) {
