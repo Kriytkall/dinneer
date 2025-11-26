@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
+import '../service/refeicao/Refeicao.dart';
 
 class TelaDetalhesJantar extends StatelessWidget {
-  const TelaDetalhesJantar({super.key});
+  final Refeicao refeicao; // Recebe o objeto com os dados
+
+  const TelaDetalhesJantar({super.key, required this.refeicao});
 
   @override
   Widget build(BuildContext context) {
@@ -10,7 +13,10 @@ class TelaDetalhesJantar extends StatelessWidget {
       bottomNavigationBar: Padding(
         padding: const EdgeInsets.all(16.0),
         child: ElevatedButton(
-          onPressed: () {},
+          onPressed: () {
+             // Lógica de agendamento virá depois
+             ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Funcionalidade de Agendar em breve!")));
+          },
           style: ElevatedButton.styleFrom(
             backgroundColor: Colors.grey[300],
             foregroundColor: Colors.black,
@@ -39,8 +45,7 @@ class TelaDetalhesJantar extends StatelessWidget {
                 clipper: AppBarClipper(),
                 child: Container(
                   color: Colors.grey[200],
-                  child:
-                      const Icon(Icons.image, size: 100, color: Colors.white),
+                  child: const Icon(Icons.restaurant, size: 100, color: Colors.white),
                 ),
               ),
             ),
@@ -57,9 +62,9 @@ class TelaDetalhesJantar extends StatelessWidget {
                 children: [
                   _buildTitulo(),
                   const SizedBox(height: 8),
-                  const Text(
-                    'R\$ 50,00',
-                    style: TextStyle(
+                  Text(
+                    refeicao.precoFormatado, // Preço real
+                    style: const TextStyle(
                       fontSize: 24,
                       fontWeight: FontWeight.bold,
                       color: Colors.black,
@@ -68,9 +73,9 @@ class TelaDetalhesJantar extends StatelessWidget {
                   const SizedBox(height: 16),
                   _buildInfoUsuario(),
                   const SizedBox(height: 16),
-                  const Text(
-                    'Venha conhecer o jantar italiano do Thalis. Uma delícia única com ingrediente secreto passado de geração em geração. Venha se deliciar com essa obra...',
-                    style: TextStyle(
+                  Text(
+                    refeicao.nmCardapio, // Nome do cardápio/descrição
+                    style: const TextStyle(
                       fontSize: 14,
                       color: Colors.black54,
                       height: 1.5,
@@ -91,9 +96,9 @@ class TelaDetalhesJantar extends StatelessWidget {
   }
 
   Widget _buildTitulo() {
-    return const Text(
-      'Jantar Italiano Gourmet',
-      style: TextStyle(
+    return Text(
+      refeicao.nmCardapio,
+      style: const TextStyle(
         fontSize: 28,
         fontWeight: FontWeight.bold,
       ),
@@ -106,16 +111,17 @@ class TelaDetalhesJantar extends StatelessWidget {
         const CircleAvatar(
           radius: 24,
           backgroundColor: Colors.grey,
+          child: Icon(Icons.person, color: Colors.white),
         ),
         const SizedBox(width: 12),
-        const Column(
+        Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Nome de usuário',
-              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+              refeicao.nmUsuarioAnfitriao, // Nome real do anfitrião
+              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
             ),
-            Row(
+            const Row(
               children: [
                 Icon(Icons.star, color: Colors.amber, size: 16),
                 Icon(Icons.star, color: Colors.amber, size: 16),
@@ -126,11 +132,6 @@ class TelaDetalhesJantar extends StatelessWidget {
             ),
           ],
         ),
-        const Spacer(),
-        IconButton(
-          onPressed: () {},
-          icon: const Icon(Icons.chat_bubble_outline, color: Colors.black54),
-        ),
       ],
     );
   }
@@ -139,8 +140,8 @@ class TelaDetalhesJantar extends StatelessWidget {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        _buildInfoRow(Icons.calendar_today, '12/09 às 19h'),
-        _buildInfoRow(Icons.people_alt_outlined, '0/4 vagas'),
+        _buildInfoRow(Icons.calendar_today, refeicao.dataFormatada),
+        _buildInfoRow(Icons.people_alt_outlined, '${refeicao.nuMaxConvidados} vagas'),
       ],
     );
   }
@@ -165,32 +166,29 @@ class TelaDetalhesJantar extends StatelessWidget {
         color: Colors.grey[300],
         borderRadius: BorderRadius.circular(16),
       ),
-      child: const Center(
+      child: Center(
         child: Text(
-          'Mapa Placeholder',
-          style: TextStyle(color: Colors.white),
+          'Localização: CEP ${refeicao.nuCep}', // CEP real
+          style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
         ),
       ),
     );
   }
 }
 
-// Classe que define o formato customizado para a AppBar
 class AppBarClipper extends CustomClipper<Path> {
   @override
   Path getClip(Size size) {
     final path = Path();
     const curveHeight = 40.0;
-
-    // Desenha o caminho com a curva e sem cantos arredondados no topo
-    path.moveTo(0, 0); // Canto superior esquerdo
-    path.lineTo(size.width, 0); // Linha reta para o canto superior direito
-    path.lineTo(size.width, size.height - curveHeight); // Linha para baixo
+    path.moveTo(0, 0);
+    path.lineTo(size.width, 0);
+    path.lineTo(size.width, size.height - curveHeight);
     path.quadraticBezierTo(
-      size.width / 2, // Ponto de controle X (centro)
-      size.height, // Ponto de controle Y (o ponto mais baixo da curva)
-      0, // Ponto final X (borda esquerda)
-      size.height - curveHeight, // Ponto final Y (acima da base)
+      size.width / 2,
+      size.height,
+      0,
+      size.height - curveHeight,
     );
     path.close();
     return path;
@@ -199,4 +197,3 @@ class AppBarClipper extends CustomClipper<Path> {
   @override
   bool shouldReclip(CustomClipper<Path> oldClipper) => false;
 }
-

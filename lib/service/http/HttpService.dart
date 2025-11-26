@@ -4,26 +4,30 @@ import 'package:flutter/foundation.dart';
 
 class HttpService {
 
+  // Mantenha o IP correto que você configurou
   String baseUrl = "http://192.168.1.201/pdm_php/api/v1/";
 
   HttpService();
 
   Future<dynamic> post(String endpoint, String operacao, {Map<String, dynamic>? body}) async {
-    final url = Uri.parse("$baseUrl$endpoint?oper=$operacao");
+    // 1. A URL com ?operacao=... está correta
+    final url = Uri.parse("$baseUrl$endpoint?operacao=$operacao");
 
     debugPrint("--------------------");
     debugPrint("POST Request URL: $url");
-    debugPrint("Request Body: ${jsonEncode(body)}");
+    debugPrint("Request Body: $body");
 
     try {
-      final requestBody = {
-        'dados': jsonEncode(body),
-      };
+      // 2. CORREÇÃO CRUCIAL AQUI:
+      // Removemos o 'requestBody = {'dados': ...}'
+      // Agora enviamos o 'body' (Map) diretamente.
+      // O http.post do Flutter vai converter isso para campos de formulário (key=value),
+      // que é EXATAMENTE o que o seu PHP ($_POST['nu_cpf']) espera ler.
 
       final response = await http.post(
         url,
         headers: {"Content-Type": "application/x-www-form-urlencoded"},
-        body: requestBody,
+        body: body, // Envia os dados soltos, sem jsonEncode
         encoding: Encoding.getByName('utf-8'),
       );
       
@@ -32,6 +36,8 @@ class HttpService {
       debugPrint("--------------------");
 
       if (response.statusCode == 200) {
+        // Se a resposta for vazia ou null, evitamos o erro de jsonDecode
+        if (response.body.isEmpty) return null;
         return jsonDecode(response.body);
       } else {
         throw Exception('Erro na API: ${response.statusCode}. Resposta: ${response.body}');
@@ -43,7 +49,7 @@ class HttpService {
   }
 
   Future<dynamic> get(String endpoint, String operacao) async {
-    final url = Uri.parse("$baseUrl$endpoint?oper=$operacao");
+    final url = Uri.parse("$baseUrl$endpoint?operacao=$operacao");
 
     try {
       final response = await http.get(url);
@@ -58,4 +64,3 @@ class HttpService {
     }
   }
 }
-

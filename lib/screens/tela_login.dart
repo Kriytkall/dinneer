@@ -1,5 +1,3 @@
-// lib/screens/tela_login.dart
-
 import 'package:dinneer/service/usuario/UsuarioService.dart';
 import 'package:flutter/material.dart';
 import '../widgets/campo_de_texto.dart';
@@ -32,22 +30,35 @@ class _TelaLoginState extends State<TelaLogin> {
     try {
       var resposta = await UsuarioService.login(email, senha);
       
+      // Verificação de segurança
       if (resposta['dados'] != null) {
         
-        debugPrint('Login bem-sucedido! Bem-vindo, ${resposta['dados']['nome']}');
+        // O PHP retorna os dados do usuário. Vamos pegá-los.
+        // Se vier como lista, pegamos o primeiro item. Se vier como mapa, usamos direto.
+        Map<String, dynamic> usuarioLogado;
+        if (resposta['dados'] is List) {
+           usuarioLogado = resposta['dados'][0];
+        } else {
+           usuarioLogado = Map<String, dynamic>.from(resposta['dados']);
+        }
 
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (context) => const TelaPrincipal()),
-        );
+        debugPrint('Login sucesso! Usuário: ${usuarioLogado['nm_usuario']}');
+
+        if (mounted) {
+          Navigator.pushReplacement(
+            context,
+            // AQUI É A MÁGICA: Passamos os dados para a TelaPrincipal
+            MaterialPageRoute(builder: (context) => TelaPrincipal(dadosUsuario: usuarioLogado)),
+          );
+        }
 
       } else {
         _mostrarMensagemErro(resposta['Mensagem'] ?? 'Email ou senha inválidos.');
       }
 
     } catch (e) {
-      debugPrint('Ocorreu um erro ao tentar fazer login: $e');
-      _mostrarMensagemErro('Não foi possível ligar ao servidor. Tente novamente.');
+      debugPrint('Erro no login: $e');
+      _mostrarMensagemErro('Erro ao conectar. Verifique internet ou IP.');
     } finally {
       if (mounted) {
         setState(() {
@@ -58,12 +69,14 @@ class _TelaLoginState extends State<TelaLogin> {
   }
 
   void _mostrarMensagemErro(String mensagem) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(mensagem),
-        backgroundColor: Colors.redAccent,
-      ),
-    );
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(mensagem),
+          backgroundColor: Colors.redAccent,
+        ),
+      );
+    }
   }
 
   @override
@@ -155,7 +168,6 @@ class _TelaLoginState extends State<TelaLogin> {
                 SizedBox(
                   width: double.infinity,
                   child: ElevatedButton(
-
                     onPressed: _estaCarregando ? null : _fazerLogin,
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.grey[300],
@@ -166,7 +178,6 @@ class _TelaLoginState extends State<TelaLogin> {
                       ),
                       elevation: 0,
                     ),
-
                     child: _estaCarregando
                         ? const SizedBox(
                             width: 24,
@@ -185,35 +196,6 @@ class _TelaLoginState extends State<TelaLogin> {
                           ),
                   ),
                 ),
-                const SizedBox(height: 20),
-                SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton(
-                    onPressed: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                            builder: (context) => const TelaPrincipal()),
-                      );
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.grey[300],
-                      foregroundColor: Colors.black,
-                      padding: const EdgeInsets.symmetric(vertical: 16),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      elevation: 0,
-                    ),
-                    child: const Text(
-                      'Entrar desenvolvimento',
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 16,
-                      ),
-                    ),
-                  ),
-                ),
                 const SizedBox(height: 40),
               ],
             ),
@@ -223,4 +205,3 @@ class _TelaLoginState extends State<TelaLogin> {
     );
   }
 }
-

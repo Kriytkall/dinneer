@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 
 class TelaPerfil extends StatefulWidget {
-  const TelaPerfil({super.key});
+  // Recebe os dados
+  final Map<String, dynamic> dadosUsuario;
+
+  const TelaPerfil({super.key, required this.dadosUsuario});
 
   @override
   State<TelaPerfil> createState() => _TelaPerfilState();
@@ -25,11 +28,17 @@ class _TelaPerfilState extends State<TelaPerfil>
 
   @override
   Widget build(BuildContext context) {
+    // Pegando os dados de forma segura (usando ?? para evitar erros se for nulo)
+    final nome = widget.dadosUsuario['nm_usuario'] ?? 'Usuário';
+    final email = widget.dadosUsuario['vl_email'] ?? '@usuario';
+    
+    // Obs: Se quiser exibir sobrenome, precisará alterar o PHP para retornar nm_sobrenome no Login
+
     return Scaffold(
       backgroundColor: Colors.white,
       body: CustomScrollView(
         slivers: [
-          _buildSliverAppBar(),
+          _buildSliverAppBar(nome, email),
           SliverPersistentHeader(
             delegate: _SliverAppBarDelegate(
               TabBar(
@@ -60,7 +69,7 @@ class _TelaPerfilState extends State<TelaPerfil>
     );
   }
 
-  SliverAppBar _buildSliverAppBar() {
+  SliverAppBar _buildSliverAppBar(String nome, String email) {
     return SliverAppBar(
       expandedHeight: 280.0,
       backgroundColor: Colors.white,
@@ -91,27 +100,30 @@ class _TelaPerfilState extends State<TelaPerfil>
                     backgroundColor: Colors.white,
                     child: CircleAvatar(
                       radius: 47,
-                      backgroundColor: Colors.grey, // Placeholder da foto de perfil
+                      backgroundColor: Colors.grey, 
+                      child: Icon(Icons.person, size: 50, color: Colors.white),
                     ),
                   ),
                   const SizedBox(height: 12),
-                  const Text(
-                    'Nome de Usuário',
-                    style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+                  // Exibindo os dados dinâmicos aqui
+                  Text(
+                    nome,
+                    style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
                   ),
-                  const Text('@Thalis', style: TextStyle(color: Colors.grey)),
+                  Text(email, style: const TextStyle(color: Colors.grey)),
                   const SizedBox(height: 16),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      _buildStatItem(Icons.restaurant_menu, '21', 'Jantas'),
+                      // Esses dados ainda são estáticos, pois o login não retorna contagem
+                      _buildStatItem(Icons.restaurant_menu, '0', 'Jantas'),
                       Container(
                         height: 30,
                         width: 1,
                         color: Colors.grey[300],
                         margin: const EdgeInsets.symmetric(horizontal: 20),
                       ),
-                      _buildStatItem(Icons.star, '4.9', 'Estrelas'),
+                      _buildStatItem(Icons.star, '5.0', 'Estrelas'),
                     ],
                   ),
                 ],
@@ -145,53 +157,7 @@ class _TelaPerfilState extends State<TelaPerfil>
   }
 
   Widget _buildImagensTab() {
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(12.0),
-      child: Column(
-        children: [
-          SizedBox(
-            height: 300,
-            child: Row(
-              children: [
-                Expanded(
-                  flex: 2,
-                  child: _buildImagePlaceholder(),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  flex: 1,
-                  child: Column(
-                    children: [
-                      Expanded(child: _buildImagePlaceholder()),
-                      const SizedBox(height: 12),
-                      Expanded(child: _buildImagePlaceholder()),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 12),
-          SizedBox(
-            height: 144, // Metade da altura da primeira linha menos o espaçamento
-            child: Row(
-              children: [
-                Expanded(child: _buildImagePlaceholder()),
-                const SizedBox(width: 12),
-                Expanded(child: _buildImagePlaceholder()),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildImagePlaceholder() {
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(16.0),
-      child: Container(color: Colors.grey[200]),
-    );
+    return const Center(child: Text("Galeria vazia"));
   }
 
   Widget _buildAvaliacoesTab() {
@@ -201,9 +167,7 @@ class _TelaPerfilState extends State<TelaPerfil>
         padding: const EdgeInsets.all(20),
         children: [
           _buildRatingCard('Comida', 5),
-          _buildRatingCard('Hospitalidade', 4),
-          _buildRatingCard('Ambiente', 4),
-          _buildRatingCard('Diálogo', 3),
+          _buildRatingCard('Hospitalidade', 5),
         ],
       ),
     );
@@ -242,7 +206,6 @@ class _TelaPerfilState extends State<TelaPerfil>
   }
 }
 
-// Classe auxiliar para fixar a TabBar no topo ao rolar a tela
 class _SliverAppBarDelegate extends SliverPersistentHeaderDelegate {
   _SliverAppBarDelegate(this._tabBar);
 
@@ -267,4 +230,3 @@ class _SliverAppBarDelegate extends SliverPersistentHeaderDelegate {
     return false;
   }
 }
-
