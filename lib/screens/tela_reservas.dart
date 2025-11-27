@@ -1,6 +1,6 @@
+import 'package:dinneer/service/refeicao/cardapioService.dart';
 import 'package:flutter/material.dart';
-import '../service/refeicao/Refeicao.dart';
-import '../service/refeicao/RefeicaoService.dart';
+import '../service/refeicao/Cardapio.dart';
 import '../widgets/card_refeicao.dart';
 
 class TelaReservas extends StatefulWidget {
@@ -12,7 +12,7 @@ class TelaReservas extends StatefulWidget {
 
 class _TelaReservasState extends State<TelaReservas> {
   int _filtroSelecionado = 1;
-  late Future<List<Refeicao>> _reservasFuture;
+  late Future<List<Cardapio>> _reservasFuture;
 
   @override
   void initState() {
@@ -20,12 +20,12 @@ class _TelaReservasState extends State<TelaReservas> {
     _reservasFuture = _carregarReservas();
   }
 
-  Future<List<Refeicao>> _carregarReservas() async {
+  Future<List<Cardapio>> _carregarReservas() async {
     try {
-      final resposta = await RefeicaoService.getRefeicoes();
+      final resposta = await CardapioService.getCardapiosDisponiveis();
       if (resposta['dados'] != null) {
         final dados = List<dynamic>.from(resposta['dados']);
-        return dados.map((item) => Refeicao.fromMap(item)).toList();
+        return dados.map((item) => Cardapio.fromMap(item)).toList();
       }
       return [];
     } catch (e) {
@@ -98,7 +98,7 @@ class _TelaReservasState extends State<TelaReservas> {
         ),
         Expanded(
           // Usamos o FutureBuilder para carregar a lista dinamicamente
-          child: FutureBuilder<List<Refeicao>>(
+          child: FutureBuilder<List<Cardapio>>(
             future: _reservasFuture,
             builder: (context, snapshot) {
               if (snapshot.connectionState == ConnectionState.waiting) {

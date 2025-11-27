@@ -1,8 +1,8 @@
+import 'package:dinneer/service/refeicao/Cardapio.dart';
 import 'package:flutter/material.dart';
-import '../service/refeicao/Refeicao.dart';
 
 class TelaDetalhesJantar extends StatelessWidget {
-  final Refeicao refeicao; // Recebe o objeto com os dados
+  final Cardapio refeicao; // Recebe o objeto com os dados
 
   const TelaDetalhesJantar({super.key, required this.refeicao});
 

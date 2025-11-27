@@ -4,13 +4,11 @@ import 'package:flutter/foundation.dart';
 
 class HttpService {
 
-  // Mantenha o IP correto que você configurou
-  String baseUrl = "http://192.168.1.201/pdm_php/api/v1/";
+  String baseUrl = "http://10.0.2.2/pdm/api/v1/";
 
   HttpService();
 
   Future<dynamic> post(String endpoint, String operacao, {Map<String, dynamic>? body}) async {
-    // 1. A URL com ?operacao=... está correta
     final url = Uri.parse("$baseUrl$endpoint?operacao=$operacao");
 
     debugPrint("--------------------");
