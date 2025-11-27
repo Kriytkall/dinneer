@@ -13,17 +13,19 @@ class HttpService {
 
     debugPrint("--------------------");
     debugPrint("POST Request URL: $url");
-    debugPrint("Request Body: ${jsonEncode(body)}");
+    debugPrint("Request Body: $body");
 
     try {
-      final requestBody = {
-        'dados': jsonEncode(body),
-      };
+      // 2. CORREÇÃO CRUCIAL AQUI:
+      // Removemos o 'requestBody = {'dados': ...}'
+      // Agora enviamos o 'body' (Map) diretamente.
+      // O http.post do Flutter vai converter isso para campos de formulário (key=value),
+      // que é EXATAMENTE o que o seu PHP ($_POST['nu_cpf']) espera ler.
 
       final response = await http.post(
         url,
         headers: {"Content-Type": "application/x-www-form-urlencoded"},
-        body: requestBody,
+        body: body, // Envia os dados soltos, sem jsonEncode
         encoding: Encoding.getByName('utf-8'),
       );
       
@@ -32,6 +34,8 @@ class HttpService {
       debugPrint("--------------------");
 
       if (response.statusCode == 200) {
+        // Se a resposta for vazia ou null, evitamos o erro de jsonDecode
+        if (response.body.isEmpty) return null;
         return jsonDecode(response.body);
       } else {
         throw Exception('Erro na API: ${response.statusCode}. Resposta: ${response.body}');
@@ -58,4 +62,3 @@ class HttpService {
     }
   }
 }
-

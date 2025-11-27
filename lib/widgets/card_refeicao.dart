@@ -11,9 +11,10 @@ class CardRefeicao extends StatelessWidget {
   Widget build(BuildContext context) {
     return GestureDetector(
       onTap: () {
+        // AGORA SIM: Passamos o objeto 'refeicao' para a próxima tela
         Navigator.push(
           context,
-          MaterialPageRoute(builder: (context) => const TelaDetalhesJantar()),
+          MaterialPageRoute(builder: (context) => TelaDetalhesJantar(refeicao: refeicao)),
         );
       },
       child: Card(
@@ -122,4 +123,3 @@ class CardRefeicao extends StatelessWidget {
     );
   }
 }
-
