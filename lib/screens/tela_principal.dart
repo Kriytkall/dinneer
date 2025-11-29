@@ -5,7 +5,6 @@ import 'tela_perfil.dart';
 import 'tela_reservas.dart';
 
 class TelaPrincipal extends StatefulWidget {
-  // Recebe os dados do usuário logado
   final Map<String, dynamic> dadosUsuario;
 
   const TelaPrincipal({super.key, required this.dadosUsuario});
@@ -21,12 +20,14 @@ class _TelaPrincipalState extends State<TelaPrincipal> {
   @override
   void initState() {
     super.initState();
-    // Inicializa as páginas passando os dados para onde for necessário
+    // Obtendo o ID de forma segura (garantindo que seja int)
+    int idUsuario = int.tryParse(widget.dadosUsuario['id_usuario'].toString()) ?? 0;
+
     _paginas = [
-      const TelaHome(),
+      // Passamos o ID para a Home
+      TelaHome(idUsuarioLogado: idUsuario),
       const Center(child: Text('Página Chat', style: TextStyle(fontSize: 24))),
       const TelaReservas(),
-      // Passamos os dados para a TelaPerfil
       TelaPerfil(dadosUsuario: widget.dadosUsuario),
     ];
   }

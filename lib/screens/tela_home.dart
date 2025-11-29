@@ -2,9 +2,12 @@ import 'package:dinneer/service/refeicao/cardapioService.dart';
 import 'package:flutter/material.dart';
 import '../service/refeicao/Cardapio.dart';
 import '../widgets/card_refeicao.dart';
+import 'tela_criar_jantar.dart';
 
 class TelaHome extends StatefulWidget {
-  const TelaHome({super.key});
+  final int idUsuarioLogado; // Recebe o ID do usuário
+
+  const TelaHome({super.key, this.idUsuarioLogado = 0});
 
   @override
   State<TelaHome> createState() => _TelaHomeState();
@@ -18,6 +21,7 @@ class _TelaHomeState extends State<TelaHome> {
     super.initState();
     _refeicoesFuture = _carregarRefeicoes();
   }
+
   Future<List<Cardapio>> _carregarRefeicoes() async {
     try {
       final resposta = await CardapioService.getCardapiosDisponiveis();
@@ -29,23 +33,46 @@ class _TelaHomeState extends State<TelaHome> {
       }
     } catch (e) {
       debugPrint("Erro ao carregar refeições: $e");
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("Erro ao carregar jantares."), backgroundColor: Colors.red),
-        );
-      }
       return [];
     }
   }
 
+  // Função para recarregar a lista quando voltar da criação
+  void _atualizarLista() {
+    setState(() {
+      _refeicoesFuture = _carregarRefeicoes();
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
-    return Container(
-      color: Colors.white,
-      child: Column(
+    return Scaffold(
+      backgroundColor: Colors.white,
+      // BOTÃO DE CRIAR JANTAR
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: () async {
+          if (widget.idUsuarioLogado == 0) {
+            ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Erro: Usuário não identificado.")));
+            return;
+          }
+          // Navega e espera o resultado (se criou, retorna true)
+          final bool? criou = await Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => TelaCriarJantar(idUsuario: widget.idUsuarioLogado)),
+          );
+          
+          if (criou == true) {
+            _atualizarLista(); // Atualiza a Home
+          }
+        },
+        label: const Text("Criar Jantar"),
+        icon: const Icon(Icons.add),
+        backgroundColor: Colors.black,
+      ),
+      body: Column(
         children: [
           Padding(
-            padding: const EdgeInsets.fromLTRB(16.0, 16.0, 16.0, 0),
+            padding: const EdgeInsets.fromLTRB(16.0, 40.0, 16.0, 0), // Ajuste para SafeArea
             child: Column(
               children: [
                 _buildSearchBar(),
@@ -75,7 +102,6 @@ class _TelaHomeState extends State<TelaHome> {
                     itemCount: refeicoes.length,
                     itemBuilder: (context, index) {
                       final refeicao = refeicoes[index];
-                      // CORREÇÃO: Passamos o objeto refeicao para o card!
                       return CardRefeicao(refeicao: refeicao); 
                     },
                   );
@@ -96,10 +122,7 @@ class _TelaHomeState extends State<TelaHome> {
         prefixIcon: Icon(Icons.search, color: Colors.grey[500]),
         filled: true,
         fillColor: Colors.grey[100],
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(30.0),
-          borderSide: BorderSide.none,
-        ),
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(30.0), borderSide: BorderSide.none),
         contentPadding: const EdgeInsets.symmetric(vertical: 0, horizontal: 20),
       ),
     );
@@ -121,12 +144,9 @@ class _TelaHomeState extends State<TelaHome> {
     return Chip(
       label: Text(label, style: const TextStyle(color: Colors.black54)),
       backgroundColor: Colors.grey[100],
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12.0),
-      ),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12.0)),
       side: BorderSide.none,
       padding: const EdgeInsets.symmetric(horizontal: 16),
     );
   }
 }
-

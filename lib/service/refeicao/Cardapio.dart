@@ -40,8 +40,9 @@ class Cardapio {
       idUsuario: _toInt(map['id_usuario']),
       nmUsuarioAnfitriao: map['nm_usuario_anfitriao'].toString(),
       nmCardapio: map['nm_cardapio'].toString(),
-      idRefeicao: _toInt(map['id_refeicao']),
-      hrEncontro: DateTime.parse(map['hr_encontro'].toString()),
+      // CORREÇÃO AQUI: O PHP retorna 'id_cardapio', não 'id_refeicao'
+      idRefeicao: _toInt(map['id_cardapio']), 
+      hrEncontro: DateTime.tryParse(map['hr_encontro'].toString()) ?? DateTime.now(),
       nuMaxConvidados: _toInt(map['nu_max_convidados']),
       precoRefeicao: _toDouble(map['preco_refeicao']),
       idLocal: _toInt(map['id_local']),
@@ -51,13 +52,20 @@ class Cardapio {
   }
 
   String get dataFormatada {
-    final DateFormat formatador = DateFormat("dd 'de' MMMM 'às' HH:mm'h'", 'pt_BR');
-    return formatador.format(hrEncontro);
+    try {
+      final DateFormat formatador = DateFormat("dd 'de' MMMM 'às' HH:mm'h'", 'pt_BR');
+      return formatador.format(hrEncontro);
+    } catch (e) {
+      return "Data a definir";
+    }
   }
 
   String get precoFormatado {
-    final formatador = NumberFormat.currency(locale: 'pt_BR', symbol: 'R\$');
-    return formatador.format(precoRefeicao);
+    try {
+      final formatador = NumberFormat.currency(locale: 'pt_BR', symbol: 'R\$');
+      return formatador.format(precoRefeicao);
+    } catch (e) {
+      return "R\$ 0,00";
+    }
   }
 }
-
