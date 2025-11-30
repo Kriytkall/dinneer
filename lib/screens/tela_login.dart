@@ -1,4 +1,5 @@
 import 'package:dinneer/service/usuario/UsuarioService.dart';
+import 'package:dinneer/service/sessao/SessionService.dart';
 import 'package:flutter/material.dart';
 import '../widgets/campo_de_texto.dart';
 import 'tela_cadastro.dart';
@@ -29,33 +30,33 @@ class _TelaLoginState extends State<TelaLogin> {
 
     try {
       var resposta = await UsuarioService.login(email, senha);
-      
-      // Verificação de segurança
+
       if (resposta['dados'] != null) {
-        
-        // O PHP retorna os dados do usuário. Vamos pegá-los.
-        // Se vier como lista, pegamos o primeiro item. Se vier como mapa, usamos direto.
         Map<String, dynamic> usuarioLogado;
+
         if (resposta['dados'] is List) {
-           usuarioLogado = resposta['dados'][0];
+          usuarioLogado = resposta['dados'][0];
         } else {
-           usuarioLogado = Map<String, dynamic>.from(resposta['dados']);
+          usuarioLogado = Map<String, dynamic>.from(resposta['dados']);
         }
 
         debugPrint('Login sucesso! Usuário: ${usuarioLogado['nm_usuario']}');
 
+        await SessionService.salvarUsuarioId(usuarioLogado['id_usuario']);
+
         if (mounted) {
           Navigator.pushReplacement(
             context,
-            // AQUI É A MÁGICA: Passamos os dados para a TelaPrincipal
-            MaterialPageRoute(builder: (context) => TelaPrincipal(dadosUsuario: usuarioLogado)),
+            MaterialPageRoute(
+              builder: (context) =>
+                  TelaPrincipal(),
+            ),
           );
         }
-
       } else {
-        _mostrarMensagemErro(resposta['Mensagem'] ?? 'Email ou senha inválidos.');
+        _mostrarMensagemErro(
+            resposta['Mensagem'] ?? 'Email ou senha inválidos.');
       }
-
     } catch (e) {
       debugPrint('Erro no login: $e');
       _mostrarMensagemErro('Erro ao conectar. Verifique internet ou IP.');
@@ -69,14 +70,14 @@ class _TelaLoginState extends State<TelaLogin> {
   }
 
   void _mostrarMensagemErro(String mensagem) {
-    if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(mensagem),
-          backgroundColor: Colors.redAccent,
-        ),
-      );
-    }
+    if (!mounted) return;
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(mensagem),
+        backgroundColor: Colors.redAccent,
+      ),
+    );
   }
 
   @override
@@ -139,6 +140,7 @@ class _TelaLoginState extends State<TelaLogin> {
                   textoObscuro: true,
                 ),
                 const SizedBox(height: 24),
+
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
@@ -164,7 +166,9 @@ class _TelaLoginState extends State<TelaLogin> {
                     ),
                   ],
                 ),
+
                 const SizedBox(height: 30),
+
                 SizedBox(
                   width: double.infinity,
                   child: ElevatedButton(
@@ -196,6 +200,7 @@ class _TelaLoginState extends State<TelaLogin> {
                           ),
                   ),
                 ),
+
                 const SizedBox(height: 40),
               ],
             ),

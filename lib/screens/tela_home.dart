@@ -49,26 +49,6 @@ class _TelaHomeState extends State<TelaHome> {
     return Scaffold(
       backgroundColor: Colors.white,
       // BOTÃO DE CRIAR JANTAR
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () async {
-          if (widget.idUsuarioLogado == 0) {
-            ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Erro: Usuário não identificado.")));
-            return;
-          }
-          // Navega e espera o resultado (se criou, retorna true)
-          final bool? criou = await Navigator.push(
-            context,
-            MaterialPageRoute(builder: (context) => TelaCriarJantar(idUsuario: widget.idUsuarioLogado)),
-          );
-          
-          if (criou == true) {
-            _atualizarLista(); // Atualiza a Home
-          }
-        },
-        label: const Text("Criar Jantar"),
-        icon: const Icon(Icons.add),
-        backgroundColor: Colors.black,
-      ),
       body: Column(
         children: [
           Padding(
