@@ -14,8 +14,88 @@ class TelaDetalhesJantar extends StatelessWidget {
         padding: const EdgeInsets.all(16.0),
         child: ElevatedButton(
           onPressed: () {
-             // Lógica de agendamento virá depois
-             ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Funcionalidade de Agendar em breve!")));
+            showModalBottomSheet(
+              context: context,
+              isScrollControlled: true,
+              shape: const RoundedRectangleBorder(
+                borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+              ),
+              builder: (context) {
+                final TextEditingController dependentesController =
+                    TextEditingController();
+
+                return Padding(
+                  padding: MediaQuery.of(context).viewInsets,
+                  child: Container(
+                    padding: const EdgeInsets.all(20),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          "Agendamento",
+                          style: TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+
+                        const SizedBox(height: 20),
+
+                        const Text("Quantas pessoas irão jantar com você?"),
+
+                        const SizedBox(height: 8),
+
+                        TextField(
+                          controller: dependentesController,
+                          keyboardType: TextInputType.number,
+                          decoration: const InputDecoration(
+                            labelText: "Número de dependentes",
+                            border: OutlineInputBorder(),
+                          ),
+                        ),
+
+                        const SizedBox(height: 20),
+
+                        ElevatedButton(
+                          onPressed: () {
+                            final int dependentes =
+                                int.tryParse(dependentesController.text) ?? 0;
+
+                            final agendamentoPayload = {
+                              "idLocal": refeicao.idLocal,
+                              "idUsuario": refeicao.idUsuario,
+                              "idCardapio": refeicao.idRefeicao,
+                            };
+
+                            Navigator.pop(context);
+
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(content: Text("Agendamento preparado!")),
+                            );
+
+                            print("📤 Payload pronto para envio:");
+                            print(agendamentoPayload);
+                          },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.black,
+                            foregroundColor: Colors.white,
+                            padding: const EdgeInsets.symmetric(vertical: 14),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                          ),
+                          child: const Text(
+                            "CONFIRMAR",
+                            style: TextStyle(fontSize: 16),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+              },
+            );
           },
           style: ElevatedButton.styleFrom(
             backgroundColor: Colors.grey[300],

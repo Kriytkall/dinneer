@@ -7,7 +7,7 @@ import '../widgets/campo_de_texto.dart';
 import '../service/refeicao/cardapioService.dart';
 
 class TelaCriarJantar extends StatefulWidget {
-  final int idUsuario;
+  final String idUsuario;
 
   const TelaCriarJantar({super.key, required this.idUsuario});
 

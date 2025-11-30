@@ -16,11 +16,8 @@ class HttpService {
     debugPrint("Request Body: $body");
 
     try {
-      // 2. CORREÇÃO CRUCIAL AQUI:
-      // Removemos o 'requestBody = {'dados': ...}'
-      // Agora enviamos o 'body' (Map) diretamente.
-      // O http.post do Flutter vai converter isso para campos de formulário (key=value),
-      // que é EXATAMENTE o que o seu PHP ($_POST['nu_cpf']) espera ler.
+
+      print(body);
 
       final response = await http.post(
         url,
@@ -45,9 +42,21 @@ class HttpService {
       throw Exception('Erro na requisição: $e');
     }
   }
+  
+  Future<dynamic> get(
+    String endpoint,
+    String operacao, {
+    Map<String, dynamic>? queryParams,
+  }) async {
 
-  Future<dynamic> get(String endpoint, String operacao) async {
-    final url = Uri.parse("$baseUrl$endpoint?operacao=$operacao");
+    final Map<String, dynamic> params = {
+      "operacao": operacao,
+      if (queryParams != null) ...queryParams,
+    };
+
+    final url = Uri.parse(baseUrl + endpoint).replace(
+      queryParameters: params,
+    );
 
     try {
       final response = await http.get(url);
@@ -61,4 +70,5 @@ class HttpService {
       throw Exception('Erro na requisição: $e');
     }
   }
+
 }

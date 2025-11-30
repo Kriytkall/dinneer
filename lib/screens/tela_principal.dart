@@ -1,13 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:dinneer/service/sessao/SessionService.dart';
 import '../widgets/barra_de_navegacao.dart';
 import 'tela_home.dart';
 import 'tela_perfil.dart';
 import 'tela_reservas.dart';
 
 class TelaPrincipal extends StatefulWidget {
-  final Map<String, dynamic> dadosUsuario;
-
-  const TelaPrincipal({super.key, required this.dadosUsuario});
+  const TelaPrincipal({super.key});
 
   @override
   State<TelaPrincipal> createState() => _TelaPrincipalState();
@@ -15,21 +14,31 @@ class TelaPrincipal extends StatefulWidget {
 
 class _TelaPrincipalState extends State<TelaPrincipal> {
   int _paginaAtual = 0;
-  late List<Widget> _paginas;
+  List<Widget> _paginas = [];
+  int idUsuario = -1;
 
   @override
   void initState() {
     super.initState();
-    // Obtendo o ID de forma segura (garantindo que seja int)
-    int idUsuario = int.tryParse(widget.dadosUsuario['id_usuario'].toString()) ?? 0;
+    _carregarUsuario();
+  }
+
+  Future<void> _carregarUsuario() async {
+    String? idUsuarioStr = await SessionService.pegarUsuarioId();
+
+    idUsuario = int.tryParse(idUsuarioStr ?? "-1") ?? -1;
+
+    print("ID DO USUÁRIO CARREGADO: $idUsuario");
 
     _paginas = [
-      // Passamos o ID para a Home
       TelaHome(idUsuarioLogado: idUsuario),
-      const Center(child: Text('Página Chat', style: TextStyle(fontSize: 24))),
+      const Center(
+          child: Text('Página Chat', style: TextStyle(fontSize: 24))),
       const TelaReservas(),
-      TelaPerfil(dadosUsuario: widget.dadosUsuario),
+      TelaPerfil(dadosUsuario: {"id_usuario": idUsuario}),
     ];
+
+    setState(() {});
   }
 
   void _onItemTapped(int index) {
@@ -40,6 +49,12 @@ class _TelaPrincipalState extends State<TelaPrincipal> {
 
   @override
   Widget build(BuildContext context) {
+    if (_paginas.isEmpty) {
+      return const Scaffold(
+        body: Center(child: CircularProgressIndicator()),
+      );
+    }
+
     return Scaffold(
       body: _paginas[_paginaAtual],
       bottomNavigationBar: BarraNavegacaoCustomizada(

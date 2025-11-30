@@ -11,4 +11,24 @@ class CardapioService {
   static Future<dynamic> createJantar(Map<String, dynamic> dados) async {
     return await httpService.post(endpoint, "createJantar", body: dados);
   }
+
+  static Future<dynamic> getMeuCardapio(int idLocal) async {
+    return await httpService.get(
+      endpoint, 
+      "getMeuCardapio",       
+      queryParams: {
+        "id_local": idLocal.toString(),
+      }
+    );
+  }
+
+  static Future<dynamic> deleteJantar(int idJantar) async {
+    return await httpService.post(
+      endpoint,
+      "deleteCardapio",
+      body: {
+        "id_cardapio": idJantar.toString(),
+      },
+    );
+  }
 }
