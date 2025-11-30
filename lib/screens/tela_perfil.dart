@@ -15,50 +15,107 @@ class TelaPerfil extends StatefulWidget {
 }
 
 class _TelaPerfilState extends State<TelaPerfil>
-    with SingleTickerProviderStateMixin {
-  TabController? _tabController;
+    with TickerProviderStateMixin {
+  late TabController _tabController;
   String? idUsuario;
 
   List<dynamic> meusLocais = [];
   bool carregandoLocais = true;
 
-  bool temLocais = false; // <<< CONTROLE PRINCIPAL
-
   @override
   void initState() {
     super.initState();
+
+    // TabController fixo — sempre 3 abas
+    _tabController = TabController(length: 3, vsync: this);
+
     _carregarIdUsuario();
   }
 
-  Future<void> _carregarIdUsuario() async {
-    final id = await SessionService.pegarUsuarioId();
-    setState(() => idUsuario = id);
-
-    await _carregarMeusLocais();
+  @override
+  void dispose() {
+    _tabController.dispose();
+    super.dispose();
   }
 
+  // Carrega o id do usuário da sessão
+  Future<void> _carregarIdUsuario() async {
+    try {
+      final id = await SessionService.pegarUsuarioId();
+
+      if (!mounted) return;
+      setState(() => idUsuario = id);
+
+      await _carregarMeusLocais();
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => carregandoLocais = false);
+    }
+  }
+
+  // Carrega os locais do usuário SEM recriar TabController
   Future<void> _carregarMeusLocais() async {
     if (idUsuario == null) return;
+
+    if (!mounted) return;
+    setState(() => carregandoLocais = true);
 
     try {
       final resposta = await LocalService.getMeusLocais(idUsuario!);
 
-      int registros = resposta['registros'] ?? 0;
+      if (!mounted) return;
 
       setState(() {
-        temLocais = registros > 0;
-
         meusLocais = resposta['dados'] ?? [];
         carregandoLocais = false;
-
-        _tabController = TabController(
-          length: temLocais ? 3 : 2,  
-          vsync: this,
-        );
       });
+
     } catch (e) {
+      if (!mounted) return;
       setState(() => carregandoLocais = false);
     }
+  }
+
+  // Confirmação e execução da exclusão do local
+  void _confirmarDeleteLocal(int idLocal) {
+    showDialog(
+      context: context,
+      builder: (ctx) {
+        return AlertDialog(
+          title: const Text("Excluir local"),
+          content: const Text("Tem certeza que deseja excluir este local?"),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text("Cancelar"),
+            ),
+            TextButton(
+              onPressed: () async {
+                Navigator.pop(context);
+
+                try {
+                  await LocalService.deleteLocal(idLocal.toString());
+
+                  if (!mounted) return;
+                  await _carregarMeusLocais();
+
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text("Local excluído com sucesso.")),
+                  );
+
+                } catch (e) {
+                  if (!mounted) return;
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text("Erro ao excluir local.")),
+                  );
+                }
+              },
+              child: const Text("Excluir", style: TextStyle(color: Colors.red)),
+            ),
+          ],
+        );
+      },
+    );
   }
 
   @override
@@ -67,7 +124,7 @@ class _TelaPerfilState extends State<TelaPerfil>
     final email = widget.dadosUsuario['vl_email'] ?? '@usuario';
     final fotoUrl = widget.dadosUsuario['vl_foto'];
 
-    if (idUsuario == null || _tabController == null) {
+    if (idUsuario == null) {
       return const Scaffold(
         body: Center(child: CircularProgressIndicator()),
       );
@@ -76,22 +133,22 @@ class _TelaPerfilState extends State<TelaPerfil>
     return Scaffold(
       backgroundColor: Colors.white,
 
-      // FAB — SOMENTE SE NÃO TIVER LOCAIS
-      floatingActionButton: !temLocais
-          ? FloatingActionButton.extended(
-              onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) =>
-                        TelaCriarLocal(idUsuario: int.parse(idUsuario!)),
-                  ),
-                ).then((_) => _carregarMeusLocais());
-              },
-              label: const Text("Quero virar anfitrião"),
-              icon: const Icon(Icons.home),
-            )
-          : null,
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (_) =>
+                  TelaCriarLocal(idUsuario: int.parse(idUsuario!)),
+            ),
+          ).then((_) {
+            if (!mounted) return;
+            _carregarMeusLocais();
+          });
+        },
+        label: const Text("Adicionar local"),
+        icon: const Icon(Icons.home),
+      ),
 
       body: CustomScrollView(
         slivers: [
@@ -127,10 +184,11 @@ class _TelaPerfilState extends State<TelaPerfil>
                           child: CircleAvatar(
                             radius: 50,
                             backgroundColor: Colors.grey,
-                            backgroundImage: (fotoUrl != null && fotoUrl != "")
-                                ? NetworkImage(fotoUrl)
-                                : null,
-                            child: (fotoUrl == null || fotoUrl == "")
+                            backgroundImage:
+                                fotoUrl != null && fotoUrl != ""
+                                    ? NetworkImage(fotoUrl)
+                                    : null,
+                            child: fotoUrl == null || fotoUrl == ""
                                 ? const Icon(Icons.person,
                                     size: 50, color: Colors.white)
                                 : null,
@@ -145,8 +203,10 @@ class _TelaPerfilState extends State<TelaPerfil>
                             color: Colors.white,
                           ),
                         ),
-                        Text(email,
-                            style: const TextStyle(color: Colors.white70)),
+                        Text(
+                          email,
+                          style: const TextStyle(color: Colors.white70),
+                        ),
                       ],
                     ),
                   )
@@ -155,7 +215,7 @@ class _TelaPerfilState extends State<TelaPerfil>
             ),
           ),
 
-          // TABS
+          // TABS — sempre 3
           SliverPersistentHeader(
             delegate: _SliverAppBarDelegate(
               TabBar(
@@ -163,16 +223,11 @@ class _TelaPerfilState extends State<TelaPerfil>
                 labelColor: Colors.black,
                 unselectedLabelColor: Colors.grey,
                 indicatorColor: Colors.black,
-                tabs: temLocais
-                    ? const [
-                        Tab(text: "Imagens"),
-                        Tab(text: "Avaliações"),
-                        Tab(text: "Meus Locais"),
-                      ]
-                    : const [
-                        Tab(text: "Imagens"),
-                        Tab(text: "Avaliações"),
-                      ],
+                tabs: const [
+                  Tab(text: "Imagens"),
+                  Tab(text: "Avaliações"),
+                  Tab(text: "Meus Locais"),
+                ],
               ),
             ),
             pinned: true,
@@ -181,16 +236,11 @@ class _TelaPerfilState extends State<TelaPerfil>
           SliverFillRemaining(
             child: TabBarView(
               controller: _tabController,
-              children: temLocais
-                  ? [
-                      const Center(child: Text("Galeria vazia")),
-                      _buildAvaliacoesTab(),
-                      _buildMeusLocaisTab(),
-                    ]
-                  : [
-                      const Center(child: Text("Galeria vazia")),
-                      _buildAvaliacoesTab(),
-                    ],
+              children: [
+                const Center(child: Text("Galeria vazia")),
+                _buildAvaliacoesTab(),
+                _buildMeusLocaisTab(),
+              ],
             ),
           ),
         ],
@@ -198,180 +248,131 @@ class _TelaPerfilState extends State<TelaPerfil>
     );
   }
 
-Widget _buildMeusLocaisTab() {
-  if (carregandoLocais) {
-    return const Center(child: CircularProgressIndicator());
-  }
+  // TAB — MEUS LOCAIS
+  Widget _buildMeusLocaisTab() {
+    if (carregandoLocais) {
+      return const Center(child: CircularProgressIndicator());
+    }
 
-  return Column(
-    children: [
-      const SizedBox(height: 10),
+    if (meusLocais.isEmpty) {
+      return const Center(
+        child: Text("Você ainda não possui locais cadastrados."),
+      );
+    }
 
-      Expanded(
-        child: meusLocais.isEmpty
-            ? const Center(
-                child: Text("Você ainda não possui locais cadastrados."),
-              )
-            : ListView.builder(
-                padding: const EdgeInsets.symmetric(horizontal: 20),
-                itemCount: meusLocais.length,
-                itemBuilder: (context, index) {
-                  final local = meusLocais[index];
+    return ListView.builder(
+      padding: const EdgeInsets.all(20),
+      itemCount: meusLocais.length,
+      itemBuilder: (context, index) {
+        final local = meusLocais[index];
 
-                  return Card(
-                    margin: const EdgeInsets.only(bottom: 12),
-                    elevation: 3,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Padding(
-                      padding: const EdgeInsets.all(16.0),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-
-                          // -------------------------------
-                          //      ROW 1 — CEP
-                          // -------------------------------
-                          Row(
-                            children: [
-                              const Icon(Icons.location_on, color: Colors.red),
-                              const SizedBox(width: 8),
-                              Text(
-                                "CEP: ${local['nu_cep']}",
-                                style: const TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                            ],
-                          ),
-
-                          const SizedBox(height: 8),
-
-                          // -------------------------------
-                          //      ROW 2 — CASA
-                          // -------------------------------
-                          Row(
-                            children: [
-                              const Icon(Icons.home),
-                              const SizedBox(width: 8),
-                              Text(
-                                "Casa: ${local['nu_casa']}",
-                                style: const TextStyle(fontSize: 14),
-                              ),
-                            ],
-                          ),
-
-                          const SizedBox(height: 16),
-
-                          // -------------------------------
-                          //      ROW 3 — AÇÕES
-                          // -------------------------------
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              
-                              // BOTÃO MEUS JANTARES
-                              ElevatedButton.icon(
-                                onPressed: () {
-                                  Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder: (_) => TelaMeusJantares(
-                                        idLocal: local['id_local'],
-                                        idUsuario: int.parse(idUsuario!),
-                                      ),
-                                    ),
-                                  );
-                                },
-                                icon: const Icon(Icons.list_alt),
-                                label: const Text("Meus jantares"),
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: Colors.black,
-                                  foregroundColor: Colors.white,
-                                ),
-                              ),
-
-                              // BOTÃO NOVO JANTAR
-                              ElevatedButton.icon(
-                                onPressed: () async {
-                                  final bool? criou = await Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder: (_) => TelaCriarJantar(
-                                        idUsuario: idUsuario!,
-                                        // idLocal: local['id_local'],
-                                      ),
-                                    ),
-                                  );
-
-                                  if (criou == true) {
-                                    _carregarMeusLocais();
-                                  }
-                                },
-                                icon: const Icon(Icons.restaurant_menu),
-                                label: const Text("Novo jantar"),
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: Colors.orange,
-                                  foregroundColor: Colors.white,
-                                ),
-                              ),
-
-                              // BOTÃO DELETAR
-                              ElevatedButton.icon(
-                                onPressed: () {
-                                  _confirmarDeleteLocal(local['id_local']);
-                                },
-                                icon: const Icon(Icons.delete),
-                                label: const Text("Excluir"),
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: Colors.red,
-                                  foregroundColor: Colors.white,
-                                ),
-                              ),
-                            ],
-                          ),
-
-                        ],
+        return Card(
+          margin: const EdgeInsets.only(bottom: 12),
+          elevation: 3,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    const Icon(Icons.location_on, color: Colors.red),
+                    const SizedBox(width: 8),
+                    Text(
+                      "CEP: ${local['nu_cep']}",
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
                       ),
                     ),
-                  );
-                },
-              ),
-      ),
-    ],
-  );
-}
+                  ],
+                ),
 
+                const SizedBox(height: 8),
 
-  void _confirmarDeleteLocal(int idLocal) {
-    showDialog(
-      context: context,
-      builder: (ctx) {
-        return AlertDialog(
-          title: const Text("Excluir local"),
-          content: const Text("Tem certeza que deseja excluir este local?"),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text("Cancelar"),
+                Row(
+                  children: [
+                    const Icon(Icons.home),
+                    const SizedBox(width: 8),
+                    Text(
+                      "Casa: ${local['nu_casa']}",
+                      style: const TextStyle(fontSize: 14),
+                    ),
+                  ],
+                ),
+
+                const SizedBox(height: 16),
+
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    ElevatedButton.icon(
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => TelaMeusJantares(
+                              idLocal: local['id_local'],
+                              idUsuario: int.parse(idUsuario!),
+                            ),
+                          ),
+                        );
+                      },
+                      icon: const Icon(Icons.list_alt),
+                      label: const Text("Meus jantares"),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.black,
+                        foregroundColor: Colors.white,
+                      ),
+                    ),
+
+                    ElevatedButton.icon(
+                      onPressed: () async {
+                        final bool? criou = await Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => TelaCriarJantar(
+                              idUsuario: idUsuario!,
+                            ),
+                          ),
+                        );
+
+                        if (criou == true) {
+                          if (!mounted) return;
+                          _carregarMeusLocais();
+                        }
+                      },
+                      icon: const Icon(Icons.restaurant_menu),
+                      label: const Text("Novo jantar"),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.orange,
+                        foregroundColor: Colors.white,
+                      ),
+                    ),
+
+                    ElevatedButton.icon(
+                      onPressed: () {
+                        _confirmarDeleteLocal(local['id_local']);
+                      },
+                      icon: const Icon(Icons.delete),
+                      label: const Text("Excluir"),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.red,
+                        foregroundColor: Colors.white,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
             ),
-            TextButton(
-              onPressed: () async {
-                Navigator.pop(context);
-
-                await LocalService.deleteLocal(idLocal.toString());
-                _carregarMeusLocais();
-              },
-              child: const Text("Excluir", style: TextStyle(color: Colors.red)),
-            ),
-          ],
+          ),
         );
       },
     );
   }
-
 
   // TAB — AVALIAÇÕES
   Widget _buildAvaliacoesTab() {
@@ -392,21 +393,23 @@ Widget _buildMeusLocaisTab() {
       ),
       child: Padding(
         padding: const EdgeInsets.all(16.0),
-        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Text(category,
-              style:
-                  const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-          const SizedBox(height: 8),
-          Row(
-            children: List.generate(
-              5,
-              (index) => Icon(
-                index < rating ? Icons.star : Icons.star_border,
-                color: Colors.amber,
-              ),
-            ),
-          )
-        ]),
+        child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(category,
+                  style: const TextStyle(
+                      fontSize: 16, fontWeight: FontWeight.bold)),
+              const SizedBox(height: 8),
+              Row(
+                children: List.generate(
+                  5,
+                  (index) => Icon(
+                    index < rating ? Icons.star : Icons.star_border,
+                    color: Colors.amber,
+                  ),
+                ),
+              )
+            ]),
       ),
     );
   }
