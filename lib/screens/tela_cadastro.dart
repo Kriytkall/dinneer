@@ -44,21 +44,30 @@ class _TelaCadastroState extends State<TelaCadastro> {
     }
   }
 
-  // Envia para o Firebase Storage
   Future<String?> _uploadImagemFirebase(File imagem) async {
     try {
-      String nomeArquivo = DateTime.now().millisecondsSinceEpoch.toString();
-      Reference ref = FirebaseStorage.instance.ref().child('perfis/$nomeArquivo.jpg');
-      
-      UploadTask task = ref.putFile(imagem);
-      TaskSnapshot snapshot = await task;
-      
-      return await snapshot.ref.getDownloadURL();
-    } catch (e) {
-      debugPrint("Erro no upload Firebase: $e");
+      final String nomeArquivo = "${DateTime.now().millisecondsSinceEpoch}.jpg";
+      final Reference ref = FirebaseStorage.instance.ref().child("perfis/$nomeArquivo");
+
+      final metadata = SettableMetadata(contentType: "image/jpeg");
+
+      debugPrint("Iniciando upload da imagem para: perfis/$nomeArquivo");
+
+      final UploadTask task = ref.putFile(imagem, metadata);
+      final TaskSnapshot snap = await task.whenComplete(() {});
+
+      final String url = await snap.ref.getDownloadURL();
+
+      debugPrint("Upload concluído. URL: $url");
+
+      return url;
+    } catch (e, stack) {
+      debugPrint("ERRO CRÍTICO NO UPLOAD: $e");
+      debugPrint(stack.toString());
       return null;
     }
   }
+
 
   void _proximaEtapa() {
     if (_emailController.text.isEmpty || _senhaController.text.isEmpty) {
@@ -73,52 +82,63 @@ class _TelaCadastroState extends State<TelaCadastro> {
   }
 
   void _fazerCadastro() async {
-    if (_nomeController.text.isEmpty || _cpfController.text.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Nome e CPF são obrigatórios.')));
+  if (_nomeController.text.isEmpty || _cpfController.text.isEmpty) {
+    _mostrarErro("Nome e CPF são obrigatórios.");
+    return;
+  }
+
+  setState(() => _estaCarregando = true);
+
+  String? urlFotoFirebase;
+
+  // 1. Envia imagem se houver
+  if (_imagemSelecionada != null) {
+    urlFotoFirebase = await _uploadImagemFirebase(_imagemSelecionada!);
+
+    if (urlFotoFirebase == null) {
+      _mostrarErro("Falha ao enviar a foto. Verifique sua internet.");
+      setState(() => _estaCarregando = false);
       return;
     }
-
-    setState(() => _estaCarregando = true);
-
-    String? urlFotoFirebase;
-
-    // 1. Upload da imagem (se houver)
-    if (_imagemSelecionada != null) {
-      urlFotoFirebase = await _uploadImagemFirebase(_imagemSelecionada!);
-      if (urlFotoFirebase == null) {
-         _mostrarErro("Erro ao enviar imagem. Verifique internet.");
-         setState(() => _estaCarregando = false);
-         return;
-      }
-    }
-
-    // 2. Envia dados + link da foto para o PHP
-    final dadosUsuario = {
-      'nm_usuario': _nomeController.text,
-      'nm_sobrenome': _sobrenomeController.text,
-      'vl_email': _emailController.text,
-      'vl_senha': _senhaController.text,
-      'nu_cpf': _cpfController.text,
-      'vl_foto': urlFotoFirebase,
-    };
-
-    try {
-      final resposta = await UsuarioService.createUsuario(dadosUsuario);
-
-      if (resposta != null && (resposta['dados'] != null || resposta['Mensagem'] == 'Sucesso')) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Cadastro realizado! Faça login.'), backgroundColor: Colors.green));
-          Navigator.of(context).pop();
-        }
-      } else {
-        _mostrarErro(resposta['Mensagem'] ?? 'Erro ao cadastrar.');
-      }
-    } catch (e) {
-      _mostrarErro('Erro de conexão: $e');
-    } finally {
-      if (mounted) setState(() => _estaCarregando = false);
-    }
   }
+
+  // 2. Monta objeto final
+  final Map<String, dynamic> dadosUsuario = {
+    "nm_usuario": _nomeController.text.trim(),
+    "nm_sobrenome": _sobrenomeController.text.trim(),
+    "vl_email": _emailController.text.trim(),
+    "vl_senha": _senhaController.text,
+    "nu_cpf": _cpfController.text.trim(),
+    "vl_foto": urlFotoFirebase ?? "",
+  };
+
+  debugPrint("Enviando usuário ao backend: $dadosUsuario");
+
+  try {
+    final resposta = await UsuarioService.createUsuario(dadosUsuario);
+
+    if (resposta != null && (resposta['dados'] != null || resposta['Mensagem'] == 'Sucesso')) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text("Cadastro realizado com sucesso."),
+            backgroundColor: Colors.green,
+          ),
+        );
+        Navigator.of(context).pop();
+      }
+    } else {
+      _mostrarErro(resposta?['Mensagem'] ?? "Erro desconhecido no backend.");
+    }
+  } catch (e, stack) {
+    debugPrint("ERRO AO CADASTRAR: $e");
+    debugPrint(stack.toString());
+    _mostrarErro("Erro ao conectar-se ao servidor.");
+  } finally {
+    if (mounted) setState(() => _estaCarregando = false);
+  }
+}
+
 
   void _mostrarErro(String mensagem) {
     if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(mensagem), backgroundColor: Colors.redAccent));

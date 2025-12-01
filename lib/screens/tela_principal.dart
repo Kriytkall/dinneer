@@ -1,12 +1,14 @@
 import 'package:flutter/material.dart';
-import 'package:dinneer/service/sessao/SessionService.dart';
 import '../widgets/barra_de_navegacao.dart';
 import 'tela_home.dart';
 import 'tela_perfil.dart';
 import 'tela_reservas.dart';
 
 class TelaPrincipal extends StatefulWidget {
-  const TelaPrincipal({super.key});
+  // Dados recebidos do Login
+  final Map<String, dynamic> dadosUsuario;
+
+  const TelaPrincipal({super.key, required this.dadosUsuario});
 
   @override
   State<TelaPrincipal> createState() => _TelaPrincipalState();
@@ -14,31 +16,30 @@ class TelaPrincipal extends StatefulWidget {
 
 class _TelaPrincipalState extends State<TelaPrincipal> {
   int _paginaAtual = 0;
-  List<Widget> _paginas = [];
-  int idUsuario = -1;
+  // Não inicializamos a lista aqui para poder acessar 'widget.dadosUsuario'
+  late List<Widget> _paginas; 
 
   @override
   void initState() {
     super.initState();
-    _carregarUsuario();
-  }
+    
+    // DEBUG: Verificando se os dados chegaram na Principal
+    debugPrint("TELA PRINCIPAL RECEBEU: ${widget.dadosUsuario}");
 
-  Future<void> _carregarUsuario() async {
-    String? idUsuarioStr = await SessionService.pegarUsuarioId();
+    // Extrai o ID com segurança
+    int idUsuario = 0;
+    if (widget.dadosUsuario['id_usuario'] != null) {
+      idUsuario = int.tryParse(widget.dadosUsuario['id_usuario'].toString()) ?? 0;
+    }
 
-    idUsuario = int.tryParse(idUsuarioStr ?? "-1") ?? -1;
-
-    print("ID DO USUÁRIO CARREGADO: $idUsuario");
-
+    // AQUI É O SEGREDO: Criamos a lista dentro do initState
     _paginas = [
       TelaHome(idUsuarioLogado: idUsuario),
-      const Center(
-          child: Text('Página Chat', style: TextStyle(fontSize: 24))),
+      const Center(child: Text('Página Chat', style: TextStyle(fontSize: 24))),
       const TelaReservas(),
-      TelaPerfil(dadosUsuario: {"id_usuario": idUsuario}),
+      // Passamos os dados CORRETOS para o Perfil
+      TelaPerfil(dadosUsuario: widget.dadosUsuario),
     ];
-
-    setState(() {});
   }
 
   void _onItemTapped(int index) {
@@ -49,12 +50,6 @@ class _TelaPrincipalState extends State<TelaPrincipal> {
 
   @override
   Widget build(BuildContext context) {
-    if (_paginas.isEmpty) {
-      return const Scaffold(
-        body: Center(child: CircularProgressIndicator()),
-      );
-    }
-
     return Scaffold(
       body: _paginas[_paginaAtual],
       bottomNavigationBar: BarraNavegacaoCustomizada(

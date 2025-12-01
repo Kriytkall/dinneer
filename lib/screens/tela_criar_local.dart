@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:dinneer/service/local/LocalService.dart';
+import '../widgets/campo_de_texto.dart';
+import '../service/local/LocalService.dart';
 
 class TelaCriarLocal extends StatefulWidget {
   final int idUsuario;
@@ -12,102 +13,86 @@ class TelaCriarLocal extends StatefulWidget {
 
 class _TelaCriarLocalState extends State<TelaCriarLocal> {
   final _cepController = TextEditingController();
-  final _casaController = TextEditingController();
-  final _cnpjController = TextEditingController();
+  final _numeroController = TextEditingController();
   final _complementoController = TextEditingController();
+  final _cnpjController = TextEditingController(); // Opcional
+  bool _estaCarregando = false;
 
-  bool enviando = false;
-
-  Future<void> _enviarFormulario() async {
-    if (enviando) return;
-
-    final cep = _cepController.text.trim();
-    final casa = _casaController.text.trim();
-    final cnpj = _cnpjController.text.trim();
-    final complemento = _complementoController.text.trim();
-
-    if (cep.isEmpty || casa.isEmpty || cnpj.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Preencha todos os campos obrigatórios!")),
-      );
+  void _criarLocal() async {
+    if (_cepController.text.isEmpty || _numeroController.text.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("CEP e Número são obrigatórios.")));
       return;
     }
 
-    setState(() => enviando = true);
+    setState(() => _estaCarregando = true);
 
     final dados = {
-      "nu_cep": cep,
-      "nu_casa": casa,
-      "id_usuario": widget.idUsuario.toString(),
-      "nu_cnpj": cnpj,
-      "dc_complemento": complemento,
+      'id_usuario': widget.idUsuario.toString(),
+      'nu_cep': _cepController.text,
+      'nu_casa': _numeroController.text,
+      'dc_complemento': _complementoController.text,
+      'nu_cnpj': _cnpjController.text,
     };
 
     try {
-      final resposta = await LocalService.createLocal(dados);
-
-      print("RESPOSTA BACKEND: $resposta");
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Local criado com sucesso!")),
-      );
-
-      Navigator.pop(context);
+      final res = await LocalService.createLocal(dados);
+      
+      // Verifica sucesso
+      if (res != null && (res['registros'] == 1 || (res['dados'] != null))) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Local adicionado!"), backgroundColor: Colors.green));
+          Navigator.pop(context, true); // Retorna true para atualizar a lista
+        }
+      } else {
+        _mostrarErro("Erro ao criar: ${res?['Mensagem']}");
+      }
     } catch (e) {
-      print("ERRO AO ENVIAR LOCAL: $e");
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Erro ao enviar dados.")),
-      );
+      _mostrarErro("Erro de conexão: $e");
     } finally {
-      setState(() => enviando = false);
+      if (mounted) setState(() => _estaCarregando = false);
     }
+  }
+
+  void _mostrarErro(String msg) {
+    if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg), backgroundColor: Colors.red));
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text("Cadastro de Local"),
+        title: const Text("Adicionar Novo Local", style: TextStyle(color: Colors.black)),
+        backgroundColor: Colors.white,
+        elevation: 0,
+        iconTheme: const IconThemeData(color: Colors.black),
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(20),
+      backgroundColor: Colors.white,
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(24),
         child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            TextField(
-              controller: _cepController,
-              decoration: const InputDecoration(
-                labelText: "CEP",
-              ),
-            ),
+            const Text("Endereço", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+            const SizedBox(height: 16),
+            CampoDeTextoCustomizado(controller: _cepController, dica: "CEP"),
             const SizedBox(height: 12),
-            TextField(
-              controller: _casaController,
-              decoration: const InputDecoration(
-                labelText: "Número da Casa",
-              ),
-            ),
+            CampoDeTextoCustomizado(controller: _numeroController, dica: "Número da Casa"),
             const SizedBox(height: 12),
-            TextField(
-              controller: _cnpjController,
-              decoration: const InputDecoration(
-                labelText: "CNPJ",
-              ),
-            ),
+            CampoDeTextoCustomizado(controller: _complementoController, dica: "Complemento (Ex: Casa de fundos)"),
             const SizedBox(height: 12),
-            TextField(
-              controller: _complementoController,
-              decoration: const InputDecoration(
-                labelText: "Complemento (opcional)",
-              ),
-            ),
-            const SizedBox(height: 20),
+            CampoDeTextoCustomizado(controller: _cnpjController, dica: "CNPJ (Opcional)"),
+            const SizedBox(height: 32),
             ElevatedButton(
-              onPressed: enviando ? null : _enviarFormulario,
-              child: enviando
-                  ? const CircularProgressIndicator()
-                  : const Text("Enviar"),
-            ),
+              onPressed: _estaCarregando ? null : _criarLocal,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.black,
+                padding: const EdgeInsets.symmetric(vertical: 16),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              ),
+              child: _estaCarregando 
+                ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: Colors.white))
+                : const Text("SALVAR LOCAL", style: TextStyle(fontWeight: FontWeight.bold)),
+            )
           ],
         ),
       ),

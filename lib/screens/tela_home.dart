@@ -2,10 +2,10 @@ import 'package:dinneer/service/refeicao/cardapioService.dart';
 import 'package:flutter/material.dart';
 import '../service/refeicao/Cardapio.dart';
 import '../widgets/card_refeicao.dart';
-import 'tela_criar_jantar.dart';
+// Removido o import de tela_criar_jantar, pois a criação agora é pelo Perfil
 
 class TelaHome extends StatefulWidget {
-  final int idUsuarioLogado; // Recebe o ID do usuário
+  final int idUsuarioLogado;
 
   const TelaHome({super.key, this.idUsuarioLogado = 0});
 
@@ -37,8 +37,9 @@ class _TelaHomeState extends State<TelaHome> {
     }
   }
 
-  // Função para recarregar a lista quando voltar da criação
-  void _atualizarLista() {
+  // Função de atualizar lista (refresh) pode ser útil no futuro com PullToRefresh, 
+  // mas por enquanto removemos a chamada do botão.
+  Future<void> _atualizarLista() async {
     setState(() {
       _refeicoesFuture = _carregarRefeicoes();
     });
@@ -48,48 +49,63 @@ class _TelaHomeState extends State<TelaHome> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
-      // BOTÃO DE CRIAR JANTAR
-      body: Column(
-        children: [
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16.0, 40.0, 16.0, 0), // Ajuste para SafeArea
-            child: Column(
-              children: [
-                _buildSearchBar(),
-                const SizedBox(height: 16),
-                _buildFilterButtons(),
-                const SizedBox(height: 12),
-              ],
+      
+      // REMOVIDO: FloatingActionButton. A criação agora é fluxo do Perfil -> Local.
+      
+      body: RefreshIndicator(
+        onRefresh: _atualizarLista, // Adicionei "puxar para atualizar" para compensar
+        color: Colors.black,
+        child: Column(
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16.0, 40.0, 16.0, 0),
+              child: Column(
+                children: [
+                  _buildSearchBar(),
+                  const SizedBox(height: 16),
+                  _buildFilterButtons(),
+                  const SizedBox(height: 12),
+                ],
+              ),
             ),
-          ),
-          Expanded(
-            child: FutureBuilder<List<Cardapio>>(
-              future: _refeicoesFuture,
-              builder: (context, snapshot) {
-                if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const Center(child: CircularProgressIndicator(color: Colors.black));
-                } 
-                else if (snapshot.hasError) {
-                  return Center(child: Text("Erro: ${snapshot.error}"));
-                } 
-                else if (!snapshot.hasData || snapshot.data!.isEmpty) {
-                  return const Center(child: Text("Nenhum jantar disponível no momento."));
-                } 
-                else {
-                  final refeicoes = snapshot.data!;
-                  return ListView.builder(
-                    padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                    itemCount: refeicoes.length,
-                    itemBuilder: (context, index) {
-                      final refeicao = refeicoes[index];
-                      return CardRefeicao(refeicao: refeicao); 
-                    },
-                  );
-                }
-              },
+            Expanded(
+              child: FutureBuilder<List<Cardapio>>(
+                future: _refeicoesFuture,
+                builder: (context, snapshot) {
+                  if (snapshot.connectionState == ConnectionState.waiting) {
+                    return const Center(child: CircularProgressIndicator(color: Colors.black));
+                  } 
+                  else if (snapshot.hasError) {
+                    return Center(child: Text("Erro: ${snapshot.error}"));
+                  } 
+                  else if (!snapshot.hasData || snapshot.data!.isEmpty) {
+                    // Mensagem mais amigável usando SingleChildScrollView para permitir o Refresh funcionar
+                    return LayoutBuilder(
+                      builder: (context, constraints) => SingleChildScrollView(
+                        physics: const AlwaysScrollableScrollPhysics(),
+                        child: ConstrainedBox(
+                          constraints: BoxConstraints(minHeight: constraints.maxHeight),
+                          child: const Center(child: Text("Nenhum jantar disponível no momento.")),
+                        ),
+                      ),
+                    );
+                  } 
+                  else {
+                    final refeicoes = snapshot.data!;
+                    return ListView.builder(
+                      padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                      itemCount: refeicoes.length,
+                      itemBuilder: (context, index) {
+                        final refeicao = refeicoes[index];
+                        return CardRefeicao(refeicao: refeicao); 
+                      },
+                    );
+                  }
+                },
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

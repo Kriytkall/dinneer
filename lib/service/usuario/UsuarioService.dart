@@ -1,4 +1,4 @@
-import 'package:dinneer/service/http/HttpService.dart'; // Verifique se o caminho está certo
+import 'package:dinneer/service/http/HttpService.dart';
 
 class UsuarioService {
   // Ajuste este endpoint se sua pasta no servidor for diferente
@@ -24,5 +24,16 @@ class UsuarioService {
   static Future<dynamic> createUsuario(Map<String, dynamic> dados) async {
     // O PHP espera operação 'createUsuario' e campos como nu_cpf, nm_usuario...
     return await httpService.post(endpoint, "createUsuario", body: dados);
+  }
+
+  // --- NOVA FUNÇÃO ADICIONADA ---
+  // Atualiza apenas a foto do perfil no banco de dados
+  static Future<dynamic> atualizarFotoPerfil(dynamic idUsuario, String novaUrl) async {
+    final body = {
+      'id_usuario': idUsuario.toString(), // Garante que vá como string
+      'vl_foto': novaUrl,
+    };
+    // Chama a operação 'atualizarFotoPerfil' que criamos no UsuarioController.php
+    return await httpService.post(endpoint, "atualizarFotoPerfil", body: body);
   }
 }

@@ -124,13 +124,27 @@ class TelaDetalhesJantar extends StatelessWidget {
               background: ClipPath(
                 clipper: AppBarClipper(),
                 child: Container(
-                  color: Colors.grey[200],
-                  child: const Icon(Icons.restaurant, size: 100, color: Colors.white),
+                  // ERRO ESTAVA AQUI: A propriedade 'color' foi removida daqui
+                  
+                  decoration: BoxDecoration(
+                    color: Colors.grey[200], // <--- A COR VEM PARA DENTRO DO DECORATION
+                    image: (refeicao.urlFoto != null && refeicao.urlFoto!.isNotEmpty)
+                        ? DecorationImage(
+                            image: NetworkImage(refeicao.urlFoto!),
+                            fit: BoxFit.cover,
+                          )
+                        : null,
+                  ),
+                  
+                  // Ícone só aparece se NÃO tiver foto
+                  child: (refeicao.urlFoto == null || refeicao.urlFoto!.isEmpty)
+                      ? const Icon(Icons.restaurant, size: 100, color: Colors.white)
+                      : null,
                 ),
               ),
             ),
             leading: IconButton(
-              icon: const Icon(Icons.arrow_back, color: Colors.black54),
+              icon: const Icon(Icons.arrow_back, color: Colors.black54), // Fica preto se tiver foto clara, talvez mudar para white com sombra
               onPressed: () => Navigator.of(context).pop(),
             ),
           ),
