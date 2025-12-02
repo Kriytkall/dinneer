@@ -1,5 +1,6 @@
-import 'package:dinneer/service/usuario/UsuarioService.dart';
 import 'package:flutter/material.dart';
+import 'package:dinneer/service/usuario/UsuarioService.dart';
+import 'package:dinneer/service/sessao/SessionService.dart'; // <--- Importante!
 import '../widgets/campo_de_texto.dart';
 import 'tela_cadastro.dart';
 import '../screens/tela_principal.dart';
@@ -41,6 +42,14 @@ class _TelaLoginState extends State<TelaLogin> {
         }
 
         debugPrint('LOGIN SUCESSO. Enviando dados para Principal: $usuarioLogado');
+
+        // --- CORREÇÃO AQUI: SALVAR NA SESSÃO ---
+        if (usuarioLogado['id_usuario'] != null) {
+          int id = int.tryParse(usuarioLogado['id_usuario'].toString()) ?? 0;
+          await SessionService.salvarUsuarioId(id); // <--- Salva no disco!
+          debugPrint('Sessão salva para o ID: $id');
+        }
+        // ---------------------------------------
 
         if (mounted) {
           Navigator.pushReplacement(

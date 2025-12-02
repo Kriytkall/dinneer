@@ -31,7 +31,9 @@ class BarraNavegacaoCustomizada extends StatelessWidget {
         backgroundColor: Colors.white,
         itemCornerRadius: 12,
         curve: Curves.easeIn,
+        // AQUI ESTA A ORDEM CORRETA (0, 1, 2)
         items: <BottomNavyBarItem>[
+          // 0: Home
           BottomNavyBarItem(
             icon: const Icon(Icons.home_rounded),
             title: const Text('Home'),
@@ -39,20 +41,17 @@ class BarraNavegacaoCustomizada extends StatelessWidget {
             inactiveColor: Colors.grey[600],
             textAlign: TextAlign.center,
           ),
+          
+          // 1: Reservas (Não pode ser Chat!)
           BottomNavyBarItem(
-            icon: const Icon(Icons.chat_bubble_rounded),
-            title: const Text('Chat'),
+            icon: const Icon(Icons.calendar_today_rounded), // Ícone de calendário
+            title: const Text('Reservas'),
             activeColor: Colors.black,
             inactiveColor: Colors.grey[600],
             textAlign: TextAlign.center,
           ),
-          BottomNavyBarItem(
-            icon: const Icon(Icons.restaurant_rounded),
-            title: const Text('Pedidos'),
-            activeColor: Colors.black,
-            inactiveColor: Colors.grey[600],
-            textAlign: TextAlign.center,
-          ),
+          
+          // 2: Perfil
           BottomNavyBarItem(
             icon: const Icon(Icons.person_rounded),
             title: const Text('Perfil'),
@@ -65,4 +64,3 @@ class BarraNavegacaoCustomizada extends StatelessWidget {
     );
   }
 }
-

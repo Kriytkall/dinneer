@@ -138,14 +138,26 @@ class _TelaPerfilState extends State<TelaPerfil> with TickerProviderStateMixin {
 
   Future<void> _uploadEAtualizarFoto(File imagem) async {
     try {
-      // 1. Upload para Firebase Storage
+      debugPrint("--- INICIANDO UPLOAD DE PERFIL ---");
+
+      // 1. Upload para Firebase Storage (COM METADADOS)
       String nomeArquivo = "perfil_${DateTime.now().millisecondsSinceEpoch}.jpg";
       Reference ref = FirebaseStorage.instance.ref().child('perfis/$nomeArquivo');
       
-      UploadTask task = ref.putFile(imagem);
-      TaskSnapshot snapshot = await task;
-      String novaUrl = await snapshot.ref.getDownloadURL();
+      // CRUCIAL: Adicionar metadados para evitar erro no Android
+      final metadata = SettableMetadata(contentType: "image/jpeg");
+      
+      UploadTask task = ref.putFile(imagem, metadata);
+      
+      // Timeout de segurança
+      await task.whenComplete(() {}).timeout(
+        const Duration(seconds: 15),
+        onTimeout: () {
+          throw Exception("Tempo limite excedido no upload.");
+        },
+      );
 
+      String novaUrl = await ref.getDownloadURL();
       debugPrint("Upload concluído. Nova URL: $novaUrl");
 
       // 2. Atualizar no Banco de Dados (PHP)
