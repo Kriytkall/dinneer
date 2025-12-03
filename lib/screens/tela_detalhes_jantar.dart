@@ -6,6 +6,9 @@ import 'package:latlong2/latlong.dart' hide Path;
 import 'package:dinneer/service/refeicao/Cardapio.dart';
 import 'package:dinneer/service/encontro/EncontroService.dart';
 import 'package:dinneer/service/sessao/SessionService.dart';
+import 'package:dinneer/service/refeicao/cardapioService.dart';
+import 'package:dinneer/screens/tela_editar_jantar.dart';
+import 'package:dinneer/widgets/modal_avaliacao.dart';
 
 class TelaDetalhesJantar extends StatefulWidget {
   final Cardapio refeicao;
@@ -18,11 +21,40 @@ class TelaDetalhesJantar extends StatefulWidget {
 
 class _TelaDetalhesJantarState extends State<TelaDetalhesJantar> {
   late Future<LatLng?> _coordenadasFuture;
+  int? _idUsuarioLogado;
+  bool _carregandoUsuario = true;
+  bool _jaReservei = false; // Novo estado para controlar o botão
 
   @override
   void initState() {
     super.initState();
     _coordenadasFuture = _buscarCoordenadasPrecisa();
+    _carregarDadosIniciais();
+  }
+
+  Future<void> _carregarDadosIniciais() async {
+    final idStr = await SessionService.pegarUsuarioId();
+    if (mounted) {
+      setState(() {
+        _idUsuarioLogado = idStr != null ? int.tryParse(idStr) : null;
+      });
+      
+      // Se tem usuário logado, verifica se ele já reservou esse jantar
+      if (_idUsuarioLogado != null) {
+        final reservou = await EncontroService.verificarSeJaReservei(
+          _idUsuarioLogado!, 
+          widget.refeicao.idEncontro
+        );
+        if (mounted) {
+          setState(() {
+            _jaReservei = reservou;
+            _carregandoUsuario = false;
+          });
+        }
+      } else {
+        if (mounted) setState(() => _carregandoUsuario = false);
+      }
+    }
   }
 
   Future<LatLng?> _buscarCoordenadasPrecisa() async {
@@ -67,20 +99,20 @@ class _TelaDetalhesJantarState extends State<TelaDetalhesJantar> {
     return null;
   }
 
-  Future<void> _realizarReserva(int idEncontro, int dependentes) async {
+  Future<void> _realizarReserva(int dependentes) async {
     try {
-      final idLogadoStr = await SessionService.pegarUsuarioId();
-      if (idLogadoStr == null) throw Exception("Faça login novamente.");
-      final int idLogado = int.parse(idLogadoStr);
+      if (_idUsuarioLogado == null) throw Exception("Erro de sessão.");
 
-      final resposta = await EncontroService.reservar(idLogado, idEncontro, dependentes);
+      final resposta = await EncontroService.reservar(_idUsuarioLogado!, widget.refeicao.idEncontro, dependentes);
       
       if (resposta != null && resposta['dados'] != null) {
          if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text("Reserva realizada com sucesso! 🎉"), backgroundColor: Colors.green),
           );
-          Navigator.pop(context, true); // Retorna true para atualizar a Home se quiser
+          // Recarrega o estado para atualizar o botão para "Cancelar"
+          _carregarDadosIniciais();
+          Navigator.pop(context, true); // Retorna true para atualizar a Home
         }
       } else {
         String erro = resposta?['Mensagem'] ?? "Erro desconhecido.";
@@ -91,6 +123,75 @@ class _TelaDetalhesJantarState extends State<TelaDetalhesJantar> {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Atenção: $e"), backgroundColor: Colors.orange));
       }
     }
+  }
+
+  // --- NOVA AÇÃO: CANCELAR RESERVA ---
+  Future<void> _cancelarMinhaReserva() async {
+    try {
+      await EncontroService.cancelarReserva(_idUsuarioLogado!, widget.refeicao.idEncontro);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Reserva cancelada."), backgroundColor: Colors.orange),
+        );
+        // Recarrega o estado para voltar o botão para "Participar"
+        _carregarDadosIniciais();
+        Navigator.pop(context, true);
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Erro ao cancelar."), backgroundColor: Colors.red));
+    }
+  }
+
+  Future<void> _deletarJantar() async {
+    try {
+      await CardapioService.deleteJantar(widget.refeicao.idRefeicao);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Jantar cancelado.")));
+        Navigator.pop(context, true);
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Erro ao excluir."), backgroundColor: Colors.red));
+    }
+  }
+
+  void _confirmarExclusao() {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text("Cancelar Jantar?"),
+        content: const Text("Isso removerá o jantar e cancelará todas as reservas. Tem certeza?"),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text("Não")),
+          TextButton(
+            onPressed: () async {
+              Navigator.pop(ctx);
+              await _deletarJantar();
+            },
+            child: const Text("Sim, Cancelar", style: TextStyle(color: Colors.red)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _confirmarCancelamentoReserva() {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text("Cancelar Reserva?"),
+        content: const Text("Você perderá seu lugar neste jantar."),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text("Voltar")),
+          TextButton(
+            onPressed: () async {
+              Navigator.pop(ctx);
+              await _cancelarMinhaReserva();
+            },
+            child: const Text("Confirmar Cancelamento", style: TextStyle(color: Colors.red)),
+          ),
+        ],
+      ),
+    );
   }
 
   void _mostrarModalAgendamento(BuildContext context) {
@@ -125,7 +226,7 @@ class _TelaDetalhesJantarState extends State<TelaDetalhesJantar> {
                       final int dependentes = int.tryParse(dependentesController.text) ?? 0;
                       Navigator.pop(context); 
                       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Processando reserva...")));
-                      _realizarReserva(widget.refeicao.idEncontro, dependentes);
+                      _realizarReserva(dependentes);
                     },
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.black,
@@ -146,32 +247,20 @@ class _TelaDetalhesJantarState extends State<TelaDetalhesJantar> {
 
   @override
   Widget build(BuildContext context) {
-    // --- LÓGICA DE LOTAÇÃO ---
     final bool estaLotado = widget.refeicao.nuConvidadosConfirmados >= widget.refeicao.nuMaxConvidados;
-    // -------------------------
+    final bool souOAnfitriao = _idUsuarioLogado != null && _idUsuarioLogado == widget.refeicao.idUsuario;
 
     return Scaffold(
       backgroundColor: Colors.white,
       
-      bottomNavigationBar: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: ElevatedButton(
-          // Se estiver lotado, o botão não funciona (null)
-          onPressed: estaLotado ? null : () => _mostrarModalAgendamento(context),
-          style: ElevatedButton.styleFrom(
-            // Cor muda se estiver lotado
-            backgroundColor: estaLotado ? Colors.grey : Colors.black, 
-            foregroundColor: Colors.white,
-            padding: const EdgeInsets.symmetric(vertical: 16),
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-            elevation: 2,
+      bottomNavigationBar: _carregandoUsuario 
+        ? const SizedBox(height: 50, child: Center(child: CircularProgressIndicator()))
+        : Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: souOAnfitriao 
+              ? _buildBotoesAnfitriao() 
+              : _buildBotaoConvidado(estaLotado),
           ),
-          child: Text(
-            estaLotado ? 'JANTAR LOTADO' : 'QUERO PARTICIPAR', 
-            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)
-          ),
-        ),
-      ),
 
       body: CustomScrollView(
         slivers: [
@@ -238,6 +327,122 @@ class _TelaDetalhesJantarState extends State<TelaDetalhesJantar> {
     );
   }
 
+  Widget _buildBotoesAnfitriao() {
+    return Row(
+      children: [
+        Expanded(
+          child: OutlinedButton(
+            onPressed: () async {
+              final atualizou = await Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => TelaEditarJantar(jantar: widget.refeicao)),
+              );
+              if (atualizou == true && mounted) Navigator.pop(context, true);
+            },
+            style: OutlinedButton.styleFrom(
+              padding: const EdgeInsets.symmetric(vertical: 16),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              side: const BorderSide(color: Colors.black),
+            ),
+            child: const Text("EDITAR", style: TextStyle(fontWeight: FontWeight.bold, color: Colors.black)),
+          ),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: ElevatedButton(
+            onPressed: _confirmarExclusao,
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.red,
+              foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(vertical: 16),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            ),
+            child: const Text("CANCELAR", style: TextStyle(fontWeight: FontWeight.bold)),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildBotaoConvidado(bool estaLotado) {
+    final bool jantarJaPassou = widget.refeicao.hrEncontro.isBefore(DateTime.now());
+
+    // Se eu JÁ reservei...
+    if (_jaReservei) {
+      
+      // ... e o jantar JÁ PASSOU: Mostra botão de AVALIAR
+      if (jantarJaPassou) {
+        return ElevatedButton(
+          onPressed: () {
+            showModalBottomSheet(
+              context: context,
+              isScrollControlled: true, // Para o teclado não cobrir se precisar
+              builder: (_) => ModalAvaliacao(
+                idUsuario: _idUsuarioLogado!,
+                idEncontro: widget.refeicao.idEncontro,
+                onAvaliacaoConcluida: () {
+                  // Opcional: Atualizar estado para não deixar avaliar de novo
+                  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Obrigado pela avaliação!")));
+                },
+              ),
+            );
+          },
+          style: ElevatedButton.styleFrom(
+            backgroundColor: Colors.amber, // Destaque amarelo
+            foregroundColor: Colors.black,
+            padding: const EdgeInsets.symmetric(vertical: 16),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          ),
+          child: const Text("AVALIAR EXPERIÊNCIA", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+        );
+      }
+
+      // ... e o jantar É FUTURO: Mostra botão de CANCELAR
+      return ElevatedButton(
+        onPressed: _confirmarCancelamentoReserva,
+        style: ElevatedButton.styleFrom(
+          backgroundColor: Colors.red.shade50,
+          foregroundColor: Colors.red,
+          padding: const EdgeInsets.symmetric(vertical: 16),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12), side: const BorderSide(color: Colors.red)),
+          elevation: 0,
+        ),
+        child: const Text("CANCELAR RESERVA", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+      );
+    }
+
+    // Se NÃO reservei e JÁ PASSOU: Desabilita
+    if (jantarJaPassou) {
+       return ElevatedButton(
+        onPressed: null,
+        style: ElevatedButton.styleFrom(
+          backgroundColor: Colors.grey,
+          foregroundColor: Colors.white,
+          padding: const EdgeInsets.symmetric(vertical: 16),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        ),
+        child: const Text("JANTAR ENCERRADO", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+      );
+    }
+
+    // Fluxo normal (Participar)
+    return ElevatedButton(
+      onPressed: estaLotado ? null : () => _mostrarModalAgendamento(context),
+      style: ElevatedButton.styleFrom(
+        backgroundColor: estaLotado ? Colors.grey : Colors.black, 
+        foregroundColor: Colors.white,
+        padding: const EdgeInsets.symmetric(vertical: 16),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        elevation: 2,
+      ),
+      child: Text(
+        estaLotado ? 'JANTAR LOTADO' : 'QUERO PARTICIPAR', 
+        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)
+      ),
+    );
+  }
+
+  // (Widgets de Mapa, Info, etc. mantidos iguais para economizar espaço visual)
   Widget _buildMapa() {
     return FutureBuilder<LatLng?>(
       future: _coordenadasFuture,

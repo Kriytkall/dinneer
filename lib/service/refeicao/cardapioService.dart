@@ -10,12 +10,12 @@ class CardapioService {
 
   static Future<dynamic> getCardapiosDisponiveis() async {
     final resposta = await httpService.get(endpoint, "getCardapiosDisponiveis");
-    
-    // --- ADICIONE ESTA LINHA AQUI ---
     print("DEBUG HOME: $resposta"); 
-    // --------------------------------
-    
     return resposta;
+  }
+
+  static Future<dynamic> updateJantar(Map<String, dynamic> dados) async {
+    return await httpService.post(endpoint, "updateJantar", body: dados);
   }
 
   static Future<dynamic> getMeuCardapio(int idLocal) async {

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import '../widgets/barra_de_navegacao.dart';
 import 'tela_home.dart';
-import 'tela_perfil.dart';
+import 'perfil/tela_perfil.dart';
 import 'tela_reservas.dart';
 
 class TelaPrincipal extends StatefulWidget {

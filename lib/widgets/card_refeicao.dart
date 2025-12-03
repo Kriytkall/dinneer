@@ -4,17 +4,28 @@ import '../screens/tela_detalhes_jantar.dart';
 
 class CardRefeicao extends StatelessWidget {
   final Cardapio refeicao;
+  final VoidCallback? onRecarregar; // <--- NOVO: Função para avisar a tela pai
 
-  const CardRefeicao({super.key, required this.refeicao});
+  const CardRefeicao({
+    super.key, 
+    required this.refeicao,
+    this.onRecarregar, // <--- Adicionado no construtor
+  });
 
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
-      onTap: () {
-        Navigator.push(
+      onTap: () async { // <--- Virou async
+        // Navega e espera um resultado (true se editou/excluiu)
+        final result = await Navigator.push(
           context,
           MaterialPageRoute(builder: (context) => TelaDetalhesJantar(refeicao: refeicao)),
         );
+
+        // Se voltou com 'true' e temos uma função de recarregar, chama ela!
+        if (result == true && onRecarregar != null) {
+          onRecarregar!();
+        }
       },
       child: Card(
         elevation: 0,
@@ -59,15 +70,13 @@ class CardRefeicao extends StatelessWidget {
                       ),
                       _buildInfoRow(Icons.calendar_today_rounded, refeicao.dataFormatada),
                       Text('${refeicao.precoFormatado} por pessoa', style: const TextStyle(fontWeight: FontWeight.bold)),
+                      
                       _buildUserInfo(refeicao),
 
-                      // --- AQUI ESTÁ A MUDANÇA ---
                       _buildInfoRow(
                         Icons.people_alt_rounded,
-                        // Mostra X/Y vagas
                         '${refeicao.nuConvidadosConfirmados}/${refeicao.nuMaxConvidados} vagas'
                       ),
-                      // ---------------------------
                     ],
                   ),
                 ),

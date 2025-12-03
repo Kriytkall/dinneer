@@ -12,9 +12,7 @@ class TelaReservas extends StatefulWidget {
 }
 
 class _TelaReservasState extends State<TelaReservas> {
-  int _filtroSelecionado = 1; // 0=Pendentes, 1=Confirmados, 2=Historico
-  
-  // Futuros para as duas abas
+  int _filtroSelecionado = 1; 
   late Future<List<Cardapio>> _minhasReservasFuture;
   late Future<List<Cardapio>> _meusJantaresCriadosFuture;
 
@@ -24,7 +22,8 @@ class _TelaReservasState extends State<TelaReservas> {
     _carregarDados();
   }
 
-  void _carregarDados() {
+  // Transforma em Future<void> para poder usar no onRecarregar
+  Future<void> _carregarDados() async {
     setState(() {
       _minhasReservasFuture = _buscarReservas();
       _meusJantaresCriadosFuture = _buscarJantaresCriados();
@@ -83,7 +82,7 @@ class _TelaReservasState extends State<TelaReservas> {
             indicatorWeight: 3,
             labelStyle: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
             tabs: [
-              Tab(text: 'Participei'), // Mudei o nome pra ficar mais claro
+              Tab(text: 'Participei'),
               Tab(text: 'Organizei'),
             ],
           ),
@@ -101,7 +100,7 @@ class _TelaReservasState extends State<TelaReservas> {
   Widget _buildListaComFiltro(Future<List<Cardapio>> future, {required bool ehReserva}) {
     return Column(
       children: [
-        if (ehReserva) // Filtros só na aba de reservas por enquanto
+        if (ehReserva) 
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 20, 16, 12),
             child: Row(
@@ -123,19 +122,16 @@ class _TelaReservasState extends State<TelaReservas> {
                 return const Center(child: CircularProgressIndicator(color: Colors.black));
               }
               if (snapshot.hasError || !snapshot.hasData || snapshot.data!.isEmpty) {
-                return const Center(child: Text('Nenhum jantar encontrado.'));
+                return const Center(child: Text('Nenhum item encontrado.'));
               }
 
-              // Filtra os dados localmente
               final todos = snapshot.data!;
               final filtrados = todos.where((jantar) {
-                if (!ehReserva) return true; // Mostra tudo na aba Organizei
-                
+                if (!ehReserva) return true;
                 final agora = DateTime.now();
-                // Lógica simples de filtro baseada na data
-                if (_filtroSelecionado == 2) { // Histórico
+                if (_filtroSelecionado == 2) { 
                    return jantar.hrEncontro.isBefore(agora);
-                } else { // Pendentes/Confirmados (Futuros)
+                } else { 
                    return jantar.hrEncontro.isAfter(agora);
                 }
               }).toList();
@@ -151,7 +147,10 @@ class _TelaReservasState extends State<TelaReservas> {
                     padding: const EdgeInsets.only(bottom: 6.0),
                     child: Column(
                       children: [
-                        CardRefeicao(refeicao: reserva),
+                        CardRefeicao(
+                          refeicao: reserva,
+                          onRecarregar: _carregarDados, // <--- A MÁGICA AQUI
+                        ),
                         if (ehReserva && _filtroSelecionado == 1)
                           Transform.translate(
                             offset: const Offset(0, -10),
@@ -169,32 +168,12 @@ class _TelaReservasState extends State<TelaReservas> {
     );
   }
 
+  // ... (Widgets _buildStatusConfirmadoBar e _buildFilterChip mantidos iguais) ...
   Widget _buildStatusConfirmadoBar() {
-    return Container(
-      padding: const EdgeInsets.fromLTRB(20, 22, 20, 12),
-      decoration: BoxDecoration(color: Colors.grey[100], borderRadius: const BorderRadius.vertical(bottom: Radius.circular(20))),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          const Text('CONFIRMADO', style: TextStyle(color: Colors.green, fontWeight: FontWeight.bold, letterSpacing: 1)),
-          const Icon(Icons.check_circle, color: Colors.green, size: 20),
-        ],
-      ),
-    );
+    return Container(padding: const EdgeInsets.fromLTRB(20, 22, 20, 12), decoration: BoxDecoration(color: Colors.grey[100], borderRadius: const BorderRadius.vertical(bottom: Radius.circular(20))), child: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [const Text('CONFIRMADO', style: TextStyle(color: Colors.green, fontWeight: FontWeight.bold, letterSpacing: 1)), const Icon(Icons.check_circle, color: Colors.green, size: 20)]));
   }
-
   Widget _buildFilterChip(String label, int index) {
     final bool isSelected = _filtroSelecionado == index;
-    return GestureDetector(
-      onTap: () => setState(() => _filtroSelecionado = index),
-      child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 20),
-        decoration: BoxDecoration(
-          color: isSelected ? Colors.grey[300] : Colors.grey[200],
-          borderRadius: BorderRadius.circular(12),
-        ),
-        child: Text(label, style: const TextStyle(color: Colors.black54, fontWeight: FontWeight.bold)),
-      ),
-    );
+    return GestureDetector(onTap: () => setState(() => _filtroSelecionado = index), child: Container(padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 20), decoration: BoxDecoration(color: isSelected ? Colors.grey[300] : Colors.grey[200], borderRadius: BorderRadius.circular(12)), child: Text(label, style: const TextStyle(color: Colors.black54, fontWeight: FontWeight.bold))));
   }
 }

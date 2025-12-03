@@ -2,7 +2,6 @@ import 'package:dinneer/service/refeicao/cardapioService.dart';
 import 'package:flutter/material.dart';
 import '../service/refeicao/Cardapio.dart';
 import '../widgets/card_refeicao.dart';
-// Removido o import de tela_criar_jantar, pois a criação agora é pelo Perfil
 
 class TelaHome extends StatefulWidget {
   final int idUsuarioLogado;
@@ -37,8 +36,7 @@ class _TelaHomeState extends State<TelaHome> {
     }
   }
 
-  // Função de atualizar lista (refresh) pode ser útil no futuro com PullToRefresh, 
-  // mas por enquanto removemos a chamada do botão.
+  // Função para recarregar a lista (Refresh)
   Future<void> _atualizarLista() async {
     setState(() {
       _refeicoesFuture = _carregarRefeicoes();
@@ -50,10 +48,8 @@ class _TelaHomeState extends State<TelaHome> {
     return Scaffold(
       backgroundColor: Colors.white,
       
-      // REMOVIDO: FloatingActionButton. A criação agora é fluxo do Perfil -> Local.
-      
       body: RefreshIndicator(
-        onRefresh: _atualizarLista, // Adicionei "puxar para atualizar" para compensar
+        onRefresh: _atualizarLista,
         color: Colors.black,
         child: Column(
           children: [
@@ -79,7 +75,6 @@ class _TelaHomeState extends State<TelaHome> {
                     return Center(child: Text("Erro: ${snapshot.error}"));
                   } 
                   else if (!snapshot.hasData || snapshot.data!.isEmpty) {
-                    // Mensagem mais amigável usando SingleChildScrollView para permitir o Refresh funcionar
                     return LayoutBuilder(
                       builder: (context, constraints) => SingleChildScrollView(
                         physics: const AlwaysScrollableScrollPhysics(),
@@ -97,7 +92,10 @@ class _TelaHomeState extends State<TelaHome> {
                       itemCount: refeicoes.length,
                       itemBuilder: (context, index) {
                         final refeicao = refeicoes[index];
-                        return CardRefeicao(refeicao: refeicao); 
+                        return CardRefeicao(
+                          refeicao: refeicao,
+                          onRecarregar: _atualizarLista, // <--- O PULO DO GATO
+                        ); 
                       },
                     );
                   }
@@ -110,6 +108,7 @@ class _TelaHomeState extends State<TelaHome> {
     );
   }
 
+  // ... (Widgets auxiliares _buildSearchBar e _buildFilterButtons mantidos iguais) ...
   Widget _buildSearchBar() {
     return TextField(
       decoration: InputDecoration(
