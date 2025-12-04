@@ -91,7 +91,6 @@ class _TelaCadastroState extends State<TelaCadastro> {
 
   String? urlFotoFirebase;
 
-  // 1. Envia imagem se houver
   if (_imagemSelecionada != null) {
     urlFotoFirebase = await _uploadImagemFirebase(_imagemSelecionada!);
 
@@ -102,7 +101,6 @@ class _TelaCadastroState extends State<TelaCadastro> {
     }
   }
 
-  // 2. Monta objeto final
   final Map<String, dynamic> dadosUsuario = {
     "nm_usuario": _nomeController.text.trim(),
     "nm_sobrenome": _sobrenomeController.text.trim(),

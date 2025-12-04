@@ -39,7 +39,6 @@ class _TabAvaliacoesState extends State<TabAvaliacoes> {
       return const Center(child: CircularProgressIndicator(color: Colors.black));
     }
 
-    // Mesmo que seja 0, vamos mostrar a estrutura para ver se o componente carregou
     return ListView(
       padding: const EdgeInsets.all(20),
       children: [

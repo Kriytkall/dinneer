@@ -31,7 +31,6 @@ class BarraNavegacaoCustomizada extends StatelessWidget {
         backgroundColor: Colors.white,
         itemCornerRadius: 12,
         curve: Curves.easeIn,
-        // AQUI ESTA A ORDEM CORRETA (0, 1, 2)
         items: <BottomNavyBarItem>[
           // 0: Home
           BottomNavyBarItem(

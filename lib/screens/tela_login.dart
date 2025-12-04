@@ -33,7 +33,6 @@ class _TelaLoginState extends State<TelaLogin> {
         
         Map<String, dynamic> usuarioLogado;
         
-        // O PHP retorna lista [{"id":...}] ou objeto {"id":...} dependendo da versão
         if (resposta['dados'] is List) {
            if ((resposta['dados'] as List).isEmpty) throw Exception("Lista de dados vazia");
            usuarioLogado = Map<String, dynamic>.from(resposta['dados'][0]);
@@ -43,7 +42,6 @@ class _TelaLoginState extends State<TelaLogin> {
 
         debugPrint('LOGIN SUCESSO. Enviando dados para Principal: $usuarioLogado');
 
-        // --- CORREÇÃO AQUI: SALVAR NA SESSÃO ---
         if (usuarioLogado['id_usuario'] != null) {
           int id = int.tryParse(usuarioLogado['id_usuario'].toString()) ?? 0;
           await SessionService.salvarUsuarioId(id); // <--- Salva no disco!
@@ -54,7 +52,6 @@ class _TelaLoginState extends State<TelaLogin> {
         if (mounted) {
           Navigator.pushReplacement(
             context,
-            // Enviando o pacote completo para a TelaPrincipal
             MaterialPageRoute(
               builder: (context) => TelaPrincipal(dadosUsuario: usuarioLogado)
             ),

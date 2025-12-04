@@ -4,25 +4,23 @@ import '../screens/tela_detalhes_jantar.dart';
 
 class CardRefeicao extends StatelessWidget {
   final Cardapio refeicao;
-  final VoidCallback? onRecarregar; // <--- NOVO: Função para avisar a tela pai
+  final VoidCallback? onRecarregar;
 
   const CardRefeicao({
     super.key, 
     required this.refeicao,
-    this.onRecarregar, // <--- Adicionado no construtor
+    this.onRecarregar,
   });
 
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
-      onTap: () async { // <--- Virou async
-        // Navega e espera um resultado (true se editou/excluiu)
+      onTap: () async { 
         final result = await Navigator.push(
           context,
           MaterialPageRoute(builder: (context) => TelaDetalhesJantar(refeicao: refeicao)),
         );
 
-        // Se voltou com 'true' e temos uma função de recarregar, chama ela!
         if (result == true && onRecarregar != null) {
           onRecarregar!();
         }

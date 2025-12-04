@@ -3,14 +3,11 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 
-// Services
 import 'package:dinneer/service/sessao/SessionService.dart';
 import 'package:dinneer/service/usuario/UsuarioService.dart';
 
-// Telas
 import 'package:dinneer/screens/tela_criar_local.dart';
 
-// Novos Componentes (Ajuste o caminho se necessário)
 import 'components/perfil_header.dart';
 import 'components/tab_avaliacoes.dart';
 import 'components/tab_meus_locais.dart';
@@ -27,7 +24,6 @@ class TelaPerfil extends StatefulWidget {
 class _TelaPerfilState extends State<TelaPerfil> with TickerProviderStateMixin {
   late TabController _tabController;
   
-  // Chave para acessar a aba de locais e recarregar quando adicionar um novo
   final GlobalKey<TabMeusLocaisState> _meusLocaisKey = GlobalKey<TabMeusLocaisState>();
   
   String? idUsuario;
@@ -75,7 +71,6 @@ class _TelaPerfilState extends State<TelaPerfil> with TickerProviderStateMixin {
     }
   }
 
-  // --- LÓGICA DE FOTO DE PERFIL ---
   Future<void> _alterarFotoPerfil() async {
     final ImagePicker picker = ImagePicker();
     try {
@@ -99,12 +94,10 @@ class _TelaPerfilState extends State<TelaPerfil> with TickerProviderStateMixin {
       String nomeArquivo = "perfil_${DateTime.now().millisecondsSinceEpoch}.jpg";
       Reference ref = FirebaseStorage.instance.ref().child('perfis/$nomeArquivo');
       
-      // Metadados Essenciais (Correção que fizemos antes)
       final metadata = SettableMetadata(contentType: "image/jpeg");
       
       UploadTask task = ref.putFile(imagem, metadata);
       
-      // Timeout de segurança
       await task.whenComplete(() {}).timeout(
         const Duration(seconds: 15),
         onTimeout: () { throw Exception("Tempo limite excedido."); },
@@ -145,7 +138,6 @@ class _TelaPerfilState extends State<TelaPerfil> with TickerProviderStateMixin {
     return Scaffold(
       backgroundColor: Colors.white,
       
-      // Botão Flutuante (Add Local)
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () {
           Navigator.push(
@@ -154,7 +146,6 @@ class _TelaPerfilState extends State<TelaPerfil> with TickerProviderStateMixin {
               builder: (_) => TelaCriarLocal(idUsuario: int.parse(idUsuario!)),
             ),
           ).then((result) {
-            // Se o retorno for true (local criado), manda a aba atualizar
             if (result == true) {
               _meusLocaisKey.currentState?.carregarLocais();
             }

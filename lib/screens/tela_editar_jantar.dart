@@ -31,7 +31,6 @@ class _TelaEditarJantarState extends State<TelaEditarJantar> {
   @override
   void initState() {
     super.initState();
-    // Preenche os campos com os dados atuais
     _tituloController = TextEditingController(text: widget.jantar.nmCardapio);
     _descricaoController = TextEditingController(text: widget.jantar.dsCardapio);
     _precoController = TextEditingController(text: widget.jantar.precoRefeicao.toString());
@@ -50,7 +49,7 @@ class _TelaEditarJantarState extends State<TelaEditarJantar> {
   }
 
   Future<String> _uploadNovaImagem() async {
-    if (_novaImagem == null) return widget.jantar.urlFoto ?? ""; // Mantém a antiga
+    if (_novaImagem == null) return widget.jantar.urlFoto ?? "";
 
     String nomeArquivo = "jantar_edit_${DateTime.now().millisecondsSinceEpoch}.jpg";
     Reference ref = FirebaseStorage.instance.ref().child('jantares/$nomeArquivo');
@@ -131,8 +130,6 @@ class _TelaEditarJantarState extends State<TelaEditarJantar> {
             const SizedBox(height: 12),
             CampoDeTextoCustomizado(controller: _descricaoController, dica: "Descrição"),
             const SizedBox(height: 12),
-            // ... (Adicione os outros campos e DatePickers igual à tela de criar) ...
-            // Para simplificar, vou por o botão direto:
             const SizedBox(height: 32),
             ElevatedButton(
               onPressed: _estaCarregando ? null : _salvarAlteracoes,

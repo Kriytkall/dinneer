@@ -22,7 +22,7 @@ class HttpService {
       final response = await http.post(
         url,
         headers: {"Content-Type": "application/x-www-form-urlencoded"},
-        body: body, // Envia os dados soltos, sem jsonEncode
+        body: body,
         encoding: Encoding.getByName('utf-8'),
       );
       
@@ -31,7 +31,6 @@ class HttpService {
       debugPrint("--------------------");
 
       if (response.statusCode == 200) {
-        // Se a resposta for vazia ou null, evitamos o erro de jsonDecode
         if (response.body.isEmpty) return null;
         return jsonDecode(response.body);
       } else {

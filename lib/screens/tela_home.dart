@@ -36,7 +36,6 @@ class _TelaHomeState extends State<TelaHome> {
     }
   }
 
-  // Função para recarregar a lista (Refresh)
   Future<void> _atualizarLista() async {
     setState(() {
       _refeicoesFuture = _carregarRefeicoes();
@@ -108,7 +107,6 @@ class _TelaHomeState extends State<TelaHome> {
     );
   }
 
-  // ... (Widgets auxiliares _buildSearchBar e _buildFilterButtons mantidos iguais) ...
   Widget _buildSearchBar() {
     return TextField(
       decoration: InputDecoration(

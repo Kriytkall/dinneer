@@ -16,7 +16,6 @@ class PerfilHeader extends StatelessWidget {
     required this.fotoUrl,
     required this.isUploading,
     required this.onCameraTap,
-    // idUsuario removido pois não buscamos mais nota aqui
   });
 
   void _fazerLogout(BuildContext context) async {

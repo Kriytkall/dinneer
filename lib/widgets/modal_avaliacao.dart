@@ -18,7 +18,6 @@ class ModalAvaliacao extends StatefulWidget {
 }
 
 class _ModalAvaliacaoState extends State<ModalAvaliacao> {
-  // Notas iniciais para cada critério
   double _notaComida = 0;
   double _notaHospitalidade = 0;
   double _notaPontualidade = 0;
@@ -35,14 +34,13 @@ class _ModalAvaliacaoState extends State<ModalAvaliacao> {
     setState(() => _enviando = true);
 
     try {
-      // Envia as 3 avaliações em sequência
       await AvaliacaoService.avaliar(widget.idUsuario, widget.idEncontro, 1, _notaComida);
       await AvaliacaoService.avaliar(widget.idUsuario, widget.idEncontro, 2, _notaHospitalidade);
       await AvaliacaoService.avaliar(widget.idUsuario, widget.idEncontro, 3, _notaPontualidade);
 
       if (mounted) {
-        Navigator.pop(context); // Fecha o modal
-        widget.onAvaliacaoConcluida(); // Avisa a tela pai
+        Navigator.pop(context);
+        widget.onAvaliacaoConcluida();
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text("Avaliação enviada com sucesso! ⭐"), backgroundColor: Colors.green),
         );
@@ -65,7 +63,6 @@ class _ModalAvaliacaoState extends State<ModalAvaliacao> {
         color: Colors.white,
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
-      // ERRO REMOVIDO DAQUI (mainAxisSize não existe em Container)
       
       child: Column(
         mainAxisSize: MainAxisSize.min, // <--- AQUI É O LUGAR CERTO

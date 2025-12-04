@@ -112,7 +112,6 @@ class _TelaCriarJantarState extends State<TelaCriarJantar> {
       'hr_encontro': dataHora.toIso8601String(),
       'vl_foto': urlFoto,
       'id_local': widget.idLocalPreSelecionado.toString(),
-      // Não enviamos mais nu_cep nem nu_casa pois o local já existe
     };
 
     try {

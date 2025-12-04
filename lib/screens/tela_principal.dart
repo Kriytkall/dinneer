@@ -29,7 +29,7 @@ class _TelaPrincipalState extends State<TelaPrincipal> {
     // A ORDEM AQUI TEM QUE SER IGUAL A DA BARRA
     _paginas = [
       TelaHome(idUsuarioLogado: idUsuario),          // 0: Home
-      const TelaReservas(),                          // 1: Reservas (Era Chat antes)
+      const TelaReservas(),                          // 1: Reservas
       TelaPerfil(dadosUsuario: widget.dadosUsuario), // 2: Perfil
     ];
   }
@@ -43,7 +43,6 @@ class _TelaPrincipalState extends State<TelaPrincipal> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      // Proteção para não quebrar se o índice estiver fora
       body: _paginas.length > _paginaAtual ? _paginas[_paginaAtual] : _paginas[0],
       bottomNavigationBar: BarraNavegacaoCustomizada(
         index: _paginaAtual,
