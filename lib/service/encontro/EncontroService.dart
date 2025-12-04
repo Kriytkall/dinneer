@@ -4,7 +4,6 @@ class EncontroService {
   static const endpoint = "encontro/EncontroController.php";
   static final httpService = HttpService();
 
-  // Fazer reserva
   static Future<dynamic> reservar(int idUsuario, int idEncontro, int dependentes) async {
     return await httpService.post(
       endpoint, 
@@ -17,7 +16,6 @@ class EncontroService {
     );
   }
 
-  // Cancelar reserva
   static Future<dynamic> cancelarReserva(int idUsuario, int idEncontro) async {
     return await httpService.post(
       endpoint, 
@@ -29,8 +27,7 @@ class EncontroService {
     );
   }
 
-  // Verificar status
-  static Future<bool> verificarSeJaReservei(int idUsuario, int idEncontro) async {
+  static Future<dynamic> verificarSeJaReservei(int idUsuario, int idEncontro) async {
     try {
       final resposta = await httpService.get(
         endpoint, 
@@ -40,9 +37,13 @@ class EncontroService {
           "id_encontro": idEncontro.toString(),
         }
       );
-      // Se retornou registro (registros > 0), é porque reservou
-      if (resposta != null && (resposta['registros'] as int) > 0) {
-        return true;
+      
+      if (resposta != null && resposta['dados'] != null) {
+        if (resposta['dados'] is List && (resposta['dados'] as List).isNotEmpty) {
+           return (resposta['dados'] as List).first;
+        } else if (resposta['dados'] is Map) {
+           return resposta['dados'];
+        }
       }
       return false;
     } catch (e) {

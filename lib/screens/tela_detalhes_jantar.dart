@@ -23,11 +23,14 @@ class _TelaDetalhesJantarState extends State<TelaDetalhesJantar> {
   late Future<LatLng?> _coordenadasFuture;
   int? _idUsuarioLogado;
   bool _carregandoUsuario = true;
-  bool _jaReservei = false; // Novo estado para controlar o botão
+  bool _jaReservei = false;
+  String? _statusReserva;
+  String _enderecoLegivel = "";
 
   @override
   void initState() {
     super.initState();
+    _enderecoLegivel = "CEP: ${widget.refeicao.nuCep}, Nº ${widget.refeicao.nuCasa}";
     _coordenadasFuture = _buscarCoordenadasPrecisa();
     _carregarDadosIniciais();
   }
@@ -39,15 +42,26 @@ class _TelaDetalhesJantarState extends State<TelaDetalhesJantar> {
         _idUsuarioLogado = idStr != null ? int.tryParse(idStr) : null;
       });
       
-      // Se tem usuário logado, verifica se ele já reservou esse jantar
       if (_idUsuarioLogado != null) {
-        final reservou = await EncontroService.verificarSeJaReservei(
+        final dadosReserva = await EncontroService.verificarSeJaReservei(
           _idUsuarioLogado!, 
           widget.refeicao.idEncontro
         );
+        
+        bool reservou = false;
+        String? status;
+        
+        if (dadosReserva is Map) {
+             reservou = dadosReserva['ja_reservou'] ?? false;
+             status = dadosReserva['status'];
+        } else if (dadosReserva is bool) {
+             reservou = dadosReserva;
+        }
+
         if (mounted) {
           setState(() {
             _jaReservei = reservou;
+            _statusReserva = status;
             _carregandoUsuario = false;
           });
         }
@@ -69,9 +83,17 @@ class _TelaDetalhesJantarState extends State<TelaDetalhesJantar> {
         final dadosCep = jsonDecode(responseCep.body);
         if (dadosCep['erro'] != true) {
           String logradouro = dadosCep['logradouro'];
+          String bairro = dadosCep['bairro'];
           String localidade = dadosCep['localidade'];
           String uf = dadosCep['uf'];
           String numero = widget.refeicao.nuCasa;
+          
+          if (mounted) {
+            setState(() {
+              _enderecoLegivel = "$logradouro, $numero\n$bairro - $localidade/$uf";
+            });
+          }
+
           queryBusca = "$logradouro, $numero, $localidade - $uf, Brasil";
         } else {
           queryBusca = "${widget.refeicao.nuCep}, ${widget.refeicao.nuCasa}, Brasil";
@@ -94,7 +116,7 @@ class _TelaDetalhesJantarState extends State<TelaDetalhesJantar> {
         }
       }
     } catch (e) {
-      debugPrint("Erro ao buscar coordenadas: $e");
+      debugPrint("Erro: $e");
     }
     return null;
   }
@@ -108,11 +130,10 @@ class _TelaDetalhesJantarState extends State<TelaDetalhesJantar> {
       if (resposta != null && resposta['dados'] != null) {
          if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text("Reserva realizada com sucesso! 🎉"), backgroundColor: Colors.green),
+            const SnackBar(content: Text("Solicitação enviada com sucesso!"), backgroundColor: Colors.green),
           );
-          // Recarrega o estado para atualizar o botão para "Cancelar"
           _carregarDadosIniciais();
-          Navigator.pop(context, true); // Retorna true para atualizar a Home
+          Navigator.pop(context, true); 
         }
       } else {
         String erro = resposta?['Mensagem'] ?? "Erro desconhecido.";
@@ -125,7 +146,6 @@ class _TelaDetalhesJantarState extends State<TelaDetalhesJantar> {
     }
   }
 
-  // --- NOVA AÇÃO: CANCELAR RESERVA ---
   Future<void> _cancelarMinhaReserva() async {
     try {
       await EncontroService.cancelarReserva(_idUsuarioLogado!, widget.refeicao.idEncontro);
@@ -133,7 +153,6 @@ class _TelaDetalhesJantarState extends State<TelaDetalhesJantar> {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text("Reserva cancelada."), backgroundColor: Colors.orange),
         );
-        // Recarrega o estado para voltar o botão para "Participar"
         _carregarDadosIniciais();
         Navigator.pop(context, true);
       }
@@ -225,7 +244,7 @@ class _TelaDetalhesJantarState extends State<TelaDetalhesJantar> {
                     onPressed: () {
                       final int dependentes = int.tryParse(dependentesController.text) ?? 0;
                       Navigator.pop(context); 
-                      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Processando reserva...")));
+                      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Enviando solicitação...")));
                       _realizarReserva(dependentes);
                     },
                     style: ElevatedButton.styleFrom(
@@ -234,7 +253,7 @@ class _TelaDetalhesJantarState extends State<TelaDetalhesJantar> {
                       padding: const EdgeInsets.symmetric(vertical: 16),
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                     ),
-                    child: const Text("CONFIRMAR RESERVA", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                    child: const Text("ENVIAR SOLICITAÇÃO", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
                   ),
                 ),
               ],
@@ -316,6 +335,20 @@ class _TelaDetalhesJantarState extends State<TelaDetalhesJantar> {
                   const SizedBox(height: 24),
                   const Text("Localização", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
                   const SizedBox(height: 12),
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Icon(Icons.location_on_outlined, color: Colors.red, size: 24),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          _enderecoLegivel, 
+                          style: TextStyle(fontSize: 16, color: Colors.grey[800], height: 1.3),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
                   _buildMapa(),
                   const SizedBox(height: 20),
                 ],
@@ -367,28 +400,24 @@ class _TelaDetalhesJantarState extends State<TelaDetalhesJantar> {
   Widget _buildBotaoConvidado(bool estaLotado) {
     final bool jantarJaPassou = widget.refeicao.hrEncontro.isBefore(DateTime.now());
 
-    // Se eu JÁ reservei...
     if (_jaReservei) {
-      
-      // ... e o jantar JÁ PASSOU: Mostra botão de AVALIAR
       if (jantarJaPassou) {
         return ElevatedButton(
           onPressed: () {
             showModalBottomSheet(
               context: context,
-              isScrollControlled: true, // Para o teclado não cobrir se precisar
+              isScrollControlled: true, 
               builder: (_) => ModalAvaliacao(
                 idUsuario: _idUsuarioLogado!,
                 idEncontro: widget.refeicao.idEncontro,
                 onAvaliacaoConcluida: () {
-                  // Opcional: Atualizar estado para não deixar avaliar de novo
                   ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Obrigado pela avaliação!")));
                 },
               ),
             );
           },
           style: ElevatedButton.styleFrom(
-            backgroundColor: Colors.amber, // Destaque amarelo
+            backgroundColor: Colors.amber, 
             foregroundColor: Colors.black,
             padding: const EdgeInsets.symmetric(vertical: 16),
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -397,7 +426,22 @@ class _TelaDetalhesJantarState extends State<TelaDetalhesJantar> {
         );
       }
 
-      // ... e o jantar É FUTURO: Mostra botão de CANCELAR
+      if (_statusReserva == 'P') {
+        return Container(
+          width: double.infinity,
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(color: Colors.orange.shade100, borderRadius: BorderRadius.circular(12)),
+          child: Column(
+            children: const [
+              Icon(Icons.access_time, color: Colors.orange, size: 30),
+              SizedBox(height: 8),
+              Text("Solicitação Pendente", style: TextStyle(fontWeight: FontWeight.bold, color: Colors.orange)),
+              Text("Aguarde o anfitrião aceitar.", style: TextStyle(fontSize: 12)),
+            ],
+          ),
+        );
+      }
+
       return ElevatedButton(
         onPressed: _confirmarCancelamentoReserva,
         style: ElevatedButton.styleFrom(
@@ -411,7 +455,6 @@ class _TelaDetalhesJantarState extends State<TelaDetalhesJantar> {
       );
     }
 
-    // Se NÃO reservei e JÁ PASSOU: Desabilita
     if (jantarJaPassou) {
        return ElevatedButton(
         onPressed: null,
@@ -425,7 +468,6 @@ class _TelaDetalhesJantarState extends State<TelaDetalhesJantar> {
       );
     }
 
-    // Fluxo normal (Participar)
     return ElevatedButton(
       onPressed: estaLotado ? null : () => _mostrarModalAgendamento(context),
       style: ElevatedButton.styleFrom(
@@ -436,13 +478,12 @@ class _TelaDetalhesJantarState extends State<TelaDetalhesJantar> {
         elevation: 2,
       ),
       child: Text(
-        estaLotado ? 'JANTAR LOTADO' : 'QUERO PARTICIPAR', 
+        estaLotado ? 'JANTAR LOTADO' : 'SOLICITAR RESERVA', 
         style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)
       ),
     );
   }
 
-  // (Widgets de Mapa, Info, etc. mantidos iguais para economizar espaço visual)
   Widget _buildMapa() {
     return FutureBuilder<LatLng?>(
       future: _coordenadasFuture,

@@ -5,7 +5,6 @@ import 'package:dinneer/screens/tela_criar_jantar.dart';
 class TabMeusLocais extends StatefulWidget {
   final String idUsuario;
 
-  // Key para permitir recarregar a lista de fora (quando cria um novo local)
   const TabMeusLocais({super.key, required this.idUsuario});
 
   @override
@@ -22,7 +21,6 @@ class TabMeusLocaisState extends State<TabMeusLocais> {
     carregarLocais();
   }
 
-  // Método público para ser chamado pela tela principal
   Future<void> carregarLocais() async {
     if (!mounted) return;
     setState(() => carregandoLocais = true);
@@ -59,7 +57,7 @@ class TabMeusLocaisState extends State<TabMeusLocais> {
                 try {
                   await LocalService.deleteLocal(idLocal.toString());
                   if (!mounted) return;
-                  await carregarLocais(); // Atualiza a lista
+                  await carregarLocais(); 
                   ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Local excluído.")));
                 } catch (e) {
                   ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Erro ao excluir."), backgroundColor: Colors.red));
@@ -153,10 +151,15 @@ class TabMeusLocaisState extends State<TabMeusLocais> {
                   children: [
                     TextButton.icon(
                       onPressed: () {
+                        int idLocal = int.tryParse(local['id_local'].toString()) ?? 0;
+                        
                         Navigator.push(
                           context,
                           MaterialPageRoute(
-                            builder: (_) => TelaCriarJantar(idUsuario: widget.idUsuario),
+                            builder: (_) => TelaCriarJantar(
+                              idUsuario: widget.idUsuario,
+                              idLocalPreSelecionado: idLocal,
+                            ),
                           ),
                         );
                       },
@@ -165,7 +168,7 @@ class TabMeusLocaisState extends State<TabMeusLocais> {
                       style: TextButton.styleFrom(foregroundColor: Colors.orange.shade800),
                     ),
                     IconButton(
-                      onPressed: () => _confirmarDeleteLocal(local['id_local']),
+                      onPressed: () => _confirmarDeleteLocal(int.tryParse(local['id_local'].toString()) ?? 0),
                       icon: const Icon(Icons.delete_outline, color: Colors.red),
                       tooltip: "Excluir Local",
                     ),
