@@ -1,16 +1,13 @@
 # dinneer
 
-A new Flutter project.
+Rodar via chrome, use esse comando pra liberar o CORS
 
-## Getting Started
+``` 
+flutter run -d chrome --web-browser-flag "--disable-web-security" --web-browser-flag "--user-data-dir=/tmp/chrome_dev_test"
+```
 
-This project is a starting point for a Flutter application.
+Para rodar via emulador android, selecione o emulador no canto inferior direito e rode 
 
-A few resources to get you started if this is your first Flutter project:
-
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
-
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+```
+flutter run
+```

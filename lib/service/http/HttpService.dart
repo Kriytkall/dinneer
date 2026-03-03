@@ -4,7 +4,10 @@ import 'package:flutter/foundation.dart';
 
 class HttpService {
 
-  String baseUrl = "http://10.0.2.2/pdm/api/v1/";
+  // Use localhost for web, 10.0.2.2 for Android emulator
+  String baseUrl = kIsWeb 
+    ? "http://localhost/pdm/api/v1/" 
+    : "http://10.0.2.2/pdm/api/v1/";
 
   HttpService();
 
