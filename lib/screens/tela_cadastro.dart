@@ -4,6 +4,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import '../widgets/campo_de_texto.dart';
 import '../service/usuario/UsuarioService.dart';
+import 'package:dinneer/service/sessao/SessionService.dart';
 
 class TelaCadastro extends StatefulWidget {
   const TelaCadastro({super.key});
