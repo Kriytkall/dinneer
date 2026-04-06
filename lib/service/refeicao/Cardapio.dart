@@ -40,28 +40,28 @@ class Cardapio {
   });
 
   factory Cardapio.fromMap(Map<String, dynamic> map) {
-    int _toInt(dynamic value) {
+    int toInt(dynamic value) {
       if (value is int) return value;
       return int.tryParse(value.toString()) ?? 0;
     }
 
-    double _toDouble(dynamic value) {
+    double toDouble(dynamic value) {
       if (value is double) return value;
       return double.tryParse(value.toString()) ?? 0.0;
     }
 
     return Cardapio(
-      idUsuario: _toInt(map['id_usuario']),
+      idUsuario: toInt(map['id_usuario']),
       nmUsuarioAnfitriao: map['nm_usuario_anfitriao'].toString(),
       nmCardapio: map['nm_cardapio'].toString(),
       dsCardapio: map['ds_cardapio']?.toString() ?? "",
-      idRefeicao: _toInt(map['id_cardapio']), 
-      idEncontro: map['id_encontro'] != null ? _toInt(map['id_encontro']) : _toInt(map['id_cardapio']),
+      idRefeicao: toInt(map['id_cardapio']), 
+      idEncontro: map['id_encontro'] != null ? toInt(map['id_encontro']) : toInt(map['id_cardapio']),
       hrEncontro: DateTime.tryParse(map['hr_encontro'].toString()) ?? DateTime.now(),
-      nuMaxConvidados: _toInt(map['nu_max_convidados']),
-      nuConvidadosConfirmados: _toInt(map['nu_convidados_confirmados']), 
-      precoRefeicao: _toDouble(map['preco_refeicao']),
-      idLocal: _toInt(map['id_local']),
+      nuMaxConvidados: toInt(map['nu_max_convidados']),
+      nuConvidadosConfirmados: toInt(map['nu_convidados_confirmados']), 
+      precoRefeicao: toDouble(map['preco_refeicao']),
+      idLocal: toInt(map['id_local']),
       nuCep: map['nu_cep'].toString(),
       nuCasa: map['nu_casa'].toString(),
       urlFoto: map['vl_foto_cardapio']?.toString(), 
